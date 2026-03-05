@@ -13,6 +13,8 @@ export default function EditEventPage() {
 
     const [loading, setLoading] = useState(false);
     const [fetching, setFetching] = useState(true);
+    const [imageFile, setImageFile] = useState<File | null>(null);
+    const [existingImage, setExistingImage] = useState<string | null>(null);
 
     const [formData, setFormData] = useState({
         title: '',
@@ -38,6 +40,7 @@ export default function EditEventPage() {
                 alert("Nem sikerült betölteni az eseményt.");
                 router.push('/dashboard');
             } else {
+                setExistingImage(data.image_url || null);
                 setFormData({
                     title: data.title || '',
                     date: data.date ? data.date.split('T')[0] : '',
@@ -59,6 +62,34 @@ export default function EditEventPage() {
         const id = params?.id;
         if (!id || typeof id !== 'string') return;
 
+        let final_image_url = existingImage;
+
+        // Ha új képet töltött fel a felhasználó
+        if (imageFile) {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+                const fileExt = imageFile.name.split('.').pop();
+                const fileName = `${Math.random()}.${fileExt}`;
+                const filePath = `${user.id}/${fileName}`;
+
+                const { error: uploadError } = await supabase.storage
+                    .from('event-images')
+                    .upload(filePath, imageFile);
+
+                if (uploadError) {
+                    console.error("Hiba a kép feltöltésekor:", uploadError);
+                    alert("Hiba történt a kép feltöltésekor.");
+                    setLoading(false);
+                    return;
+                } else {
+                    const { data: publicUrlData } = supabase.storage
+                        .from('event-images')
+                        .getPublicUrl(filePath);
+                    final_image_url = publicUrlData.publicUrl;
+                }
+            }
+        }
+
         // Adat frissítése a Supabase-ben
         const { error } = await supabase
             .from('events')
@@ -68,6 +99,7 @@ export default function EditEventPage() {
                 location: formData.location,
                 description: formData.description,
                 is_public: formData.is_public,
+                image_url: final_image_url
             })
             .eq('id', id);
 
@@ -142,6 +174,28 @@ export default function EditEventPage() {
                         onChange={(e) => setFormData({ ...formData, is_public: e.target.checked })}
                     />
                     <label htmlFor="is_public" className="text-sm font-medium text-gray-300 cursor-pointer select-none">Publikus esemény (megjelenik a kezdőlapon)</label>
+                </div>
+
+                <div>
+                    <label className="block text-xs uppercase tracking-widest text-gray-400 mb-2 font-bold">Borítókép</label>
+                    {existingImage && (
+                        <div className="mb-4">
+                            <p className="text-xs text-gray-500 mb-2">Jelenlegi kép:</p>
+                            <img src={existingImage} alt="Esemény borító" className="w-full max-w-sm h-48 object-cover rounded-xl border border-white/20" />
+                        </div>
+                    )}
+                    <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => {
+                            if (e.target.files && e.target.files.length > 0) {
+                                setImageFile(e.target.files[0]);
+                                // Opcionális: a feltöltés gomb megnyomásakor már a feltöltött lesz látható ideiglenesen
+                            }
+                        }}
+                        className="w-full bg-black/40 border border-white/20 rounded-xl p-3 text-white focus:outline-none focus:border-gold file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-[#5b42ff]/20 file:text-[#5b42ff] hover:file:bg-[#5b42ff]/30 transition-all cursor-pointer mt-2"
+                    />
+                    {imageFile && <p className="text-xs text-gold mt-2">Új kép kiválasztva cserére: {imageFile.name}</p>}
                 </div>
 
                 <div className="pt-8 flex flex-col sm:flex-row gap-4">

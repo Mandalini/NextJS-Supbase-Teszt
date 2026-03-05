@@ -1,9 +1,11 @@
 @import "tailwindcss";
 
 :root {
-  --background: #0b101e; /* Rezgéskapu sötét háttér */
-  --foreground: #e2e8f0; /* Világos szöveg */
-  
+  --background: #0b101e;
+  /* Rezgéskapu sötét háttér */
+  --foreground: #e2e8f0;
+  /* Világos szöveg */
+
   /* Brand színek */
   --color-brand-gold: #ffc107;
   --color-brand-blue: #5b42ff;
@@ -39,4 +41,10 @@ body {
 .glow-border:hover {
   box-shadow: 0 0 15px rgba(91, 66, 255, 0.6);
   border-color: rgba(91, 66, 255, 0.8);
+}
+
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
 }

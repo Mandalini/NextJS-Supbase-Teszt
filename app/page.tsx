@@ -63,41 +63,56 @@ export default async function Home() {
                 {publicEvents.length > 0 ? (
                     <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3 relative z-10">
                         {publicEvents.map((event) => (
-                            <div
+                            <Link
+                                href={`/event/${event.id}`}
                                 key={event.id}
-                                className="glass-panel rounded-xl overflow-hidden hover:-translate-y-2 transition-transform duration-300 glow-border group"
+                                className="glass-panel rounded-xl overflow-hidden hover:-translate-y-2 transition-transform duration-300 glow-border group flex flex-col cursor-pointer"
                             >
-                                <div className="p-8">
-                                    <div className="flex items-center gap-3 mb-4">
-                                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#5b42ff] to-[#9d4edd] flex items-center justify-center shadow-[0_0_15px_rgba(91,66,255,0.4)]">
-                                            <span className="text-white text-xs font-bold">
-                                                {new Date(event.date).getDate()}
+                                {event.image_url && (
+                                    <div className="w-full h-48 overflow-hidden relative border-b border-white/10 shrink-0">
+                                        <img src={event.image_url} alt={event.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent"></div>
+                                    </div>
+                                )}
+                                <div className="p-8 flex-grow flex flex-col justify-between">
+                                    <div>
+                                        <div className="flex items-center gap-3 mb-4">
+                                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#5b42ff] to-[#9d4edd] flex items-center justify-center shadow-[0_0_15px_rgba(91,66,255,0.4)] shrink-0">
+                                                <span className="text-white text-xs font-bold">
+                                                    {new Date(event.date).getDate()}
+                                                </span>
+                                            </div>
+                                            <div className="uppercase tracking-widest text-[10px] text-gray-400 font-semibold">
+                                                {new Date(event.date).toLocaleDateString('hu-HU', {
+                                                    year: 'numeric', month: 'long'
+                                                })}
+                                            </div>
+                                        </div>
+
+                                        <h3 className="block mt-1 text-2xl font-bold text-white mb-3 group-hover:text-gold transition-colors">
+                                            {event.title}
+                                        </h3>
+
+                                        {event.location && (
+                                            <p className="text-gray-400 text-sm mb-4 flex items-center gap-2 font-mono">
+                                                <span className="text-gold">📍</span> {event.location}
+                                            </p>
+                                        )}
+
+                                        {event.description && (
+                                            <p className="mt-4 text-gray-300 line-clamp-3 leading-relaxed font-light mb-6">
+                                                {event.description}
+                                            </p>
+                                        )}
+
+                                        <div className="mt-auto flex justify-end">
+                                            <span className="text-gold text-[10px] uppercase tracking-widest font-bold group-hover:translate-x-2 transition-transform duration-300 flex items-center gap-2">
+                                                Részt veszek <span>&rarr;</span>
                                             </span>
                                         </div>
-                                        <div className="uppercase tracking-widest text-[10px] text-gray-400 font-semibold">
-                                            {new Date(event.date).toLocaleDateString('hu-HU', {
-                                                year: 'numeric', month: 'long'
-                                            })}
-                                        </div>
                                     </div>
-
-                                    <h3 className="block mt-1 text-2xl font-bold text-white mb-3 group-hover:text-gold transition-colors">
-                                        {event.title}
-                                    </h3>
-
-                                    {event.location && (
-                                        <p className="text-gray-400 text-sm mb-4 flex items-center gap-2 font-mono">
-                                            <span className="text-gold">📍</span> {event.location}
-                                        </p>
-                                    )}
-
-                                    {event.description && (
-                                        <p className="mt-4 text-gray-300 line-clamp-4 leading-relaxed font-light">
-                                            {event.description}
-                                        </p>
-                                    )}
                                 </div>
-                            </div>
+                            </Link>
                         ))}
                     </div>
                 ) : (

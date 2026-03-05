@@ -7,6 +7,7 @@ import { supabase } from '@/lib/supabase';
 export default function NewEventPage() {
     const router = useRouter();
     const [loading, setLoading] = useState(false);
+    const [imageFile, setImageFile] = useState<File | null>(null);
     const [formData, setFormData] = useState({
         title: '',
         date: '',
@@ -28,6 +29,28 @@ export default function NewEventPage() {
             return;
         }
 
+        // Kép feltöltése, ha van
+        let image_url = null;
+        if (imageFile) {
+            const fileExt = imageFile.name.split('.').pop();
+            const fileName = `${Math.random()}.${fileExt}`;
+            const filePath = `${user.id}/${fileName}`;
+
+            const { error: uploadError } = await supabase.storage
+                .from('event-images')
+                .upload(filePath, imageFile);
+
+            if (uploadError) {
+                console.error("Hiba a kép feltöltésekor:", uploadError);
+                alert("Hiba történt a kép feltöltésekor.");
+            } else {
+                const { data: publicUrlData } = supabase.storage
+                    .from('event-images')
+                    .getPublicUrl(filePath);
+                image_url = publicUrlData.publicUrl;
+            }
+        }
+
         // Adat beszúrása a Supabase-be
         const { error } = await supabase
             .from('events')
@@ -38,7 +61,8 @@ export default function NewEventPage() {
                     location: formData.location,
                     description: formData.description,
                     is_public: formData.is_public,
-                    user_id: user.id
+                    user_id: user.id,
+                    image_url: image_url
                 }
             ]);
 
@@ -109,6 +133,20 @@ export default function NewEventPage() {
                         onChange={(e) => setFormData({ ...formData, is_public: e.target.checked })}
                     />
                     <label htmlFor="is_public" className="text-sm font-medium text-gray-300 cursor-pointer select-none">Publikus esemény (megjelenik a kezdőlapon)</label>
+                </div>
+
+                <div>
+                    <label className="block text-xs uppercase tracking-widest text-gray-400 mb-2 font-bold">Borítókép</label>
+                    <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => {
+                            if (e.target.files && e.target.files.length > 0) {
+                                setImageFile(e.target.files[0]);
+                            }
+                        }}
+                        className="w-full bg-black/40 border border-white/20 rounded-xl p-3 text-white focus:outline-none focus:border-gold file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-[#5b42ff]/20 file:text-[#5b42ff] hover:file:bg-[#5b42ff]/30 transition-all cursor-pointer"
+                    />
                 </div>
 
                 <div className="pt-8 flex flex-col sm:flex-row gap-4">

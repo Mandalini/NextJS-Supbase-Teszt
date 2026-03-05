@@ -93,7 +93,10 @@ export default function DashboardPage() {
 
                 <div className="flex items-center gap-4">
                     <div className="hidden sm:block text-sm text-gray-400">
-                        <Link href="/profile" className="flex items-center gap-2 hover:text-white transition-colors cursor-pointer group">
+                        <Link href="/" className="mr-6 text-xs uppercase tracking-widest hover:text-gold transition-colors font-bold">
+                            &larr; Kezdőlap
+                        </Link>
+                        <Link href="/profile" className="inline-flex items-center gap-2 hover:text-white transition-colors cursor-pointer group">
                             <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-[#5b42ff] to-[#9d4edd] flex items-center justify-center text-white font-bold group-hover:shadow-[0_0_15px_rgba(91,66,255,0.6)] transition-all">
                                 {user?.user_metadata?.display_name ? user.user_metadata.display_name.charAt(0).toUpperCase() : user?.email?.charAt(0).toUpperCase()}
                             </div>
@@ -183,38 +186,46 @@ export default function DashboardPage() {
                     {viewMode === 'grid' && (
                         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                             {filteredEvents.map((event) => (
-                                <div key={event.id} className="glass-panel p-6 rounded-xl relative min-h-[220px] glow-border group">
-                                    <div className="flex justify-between items-start mb-4">
-                                        <h3 className="font-bold text-xl line-clamp-2 pr-2 text-white group-hover:text-gold transition-colors">{event.title}</h3>
-                                        {event.is_public ? (
-                                            <span className="bg-[#5b42ff]/20 border border-[#5b42ff]/50 text-[#5b42ff] text-[10px] uppercase tracking-widest px-2 py-1 rounded-full font-bold whitespace-nowrap shrink-0 shadow-[0_0_10px_rgba(91,66,255,0.3)]">Publikus</span>
-                                        ) : (
-                                            <span className="bg-gray-800 border border-gray-600 text-gray-300 text-[10px] uppercase tracking-widest px-2 py-1 rounded-full font-bold whitespace-nowrap shrink-0">Privát</span>
+                                <div key={event.id} className="glass-panel flex flex-col rounded-xl overflow-hidden relative min-h-[260px] glow-border group">
+                                    {event.image_url && (
+                                        <div className="w-full h-32 overflow-hidden relative border-b border-white/10 shrink-0">
+                                            <img src={event.image_url} alt={event.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                                            <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent"></div>
+                                        </div>
+                                    )}
+                                    <div className="p-6 flex-grow pb-16">
+                                        <div className="flex justify-between items-start mb-4">
+                                            <h3 className="font-bold text-xl line-clamp-2 pr-2 text-white group-hover:text-gold transition-colors">{event.title}</h3>
+                                            {event.is_public ? (
+                                                <span className="bg-[#5b42ff]/20 border border-[#5b42ff]/50 text-[#5b42ff] text-[10px] uppercase tracking-widest px-2 py-1 rounded-full font-bold whitespace-nowrap shrink-0 shadow-[0_0_10px_rgba(91,66,255,0.3)]">Publikus</span>
+                                            ) : (
+                                                <span className="bg-gray-800 border border-gray-600 text-gray-300 text-[10px] uppercase tracking-widest px-2 py-1 rounded-full font-bold whitespace-nowrap shrink-0">Privát</span>
+                                            )}
+                                        </div>
+                                        <p className="text-gray-400 text-xs font-mono uppercase tracking-widest mb-2 border-b border-white/10 pb-2 inline-block">
+                                            {new Date(event.date).toLocaleDateString('hu-HU')}
+                                        </p>
+                                        {event.location && (
+                                            <p className="text-gold text-sm mb-2 font-mono">📍 <span className="text-gray-300">{event.location}</span></p>
                                         )}
-                                    </div>
-                                    <p className="text-gray-400 text-xs font-mono uppercase tracking-widest mb-2 border-b border-white/10 pb-2 inline-block">
-                                        {new Date(event.date).toLocaleDateString('hu-HU')}
-                                    </p>
-                                    {event.location && (
-                                        <p className="text-gold text-sm mb-2 font-mono">📍 <span className="text-gray-300">{event.location}</span></p>
-                                    )}
-                                    {event.description && (
-                                        <p className="text-gray-400 mt-4 line-clamp-3 mb-14 text-sm font-light leading-relaxed">{event.description}</p>
-                                    )}
+                                        {event.description && (
+                                            <p className="text-gray-400 mt-4 line-clamp-3 mb-14 text-sm font-light leading-relaxed">{event.description}</p>
+                                        )}
 
-                                    <div className="absolute bottom-5 right-5 flex gap-2 w-full justify-end pr-5">
-                                        <Link
-                                            href={`/dashboard/edit/${event.id}`}
-                                            className="bg-transparent border border-white/20 text-white hover:border-gold hover:text-gold px-3 py-1.5 rounded text-[10px] uppercase tracking-widest font-bold transition-all"
-                                        >
-                                            Szerkeszt
-                                        </Link>
-                                        <button
-                                            onClick={() => handleDelete(event.id)}
-                                            className="bg-transparent border border-red-500/50 text-red-400 hover:bg-red-500/20 px-3 py-1.5 rounded text-[10px] uppercase tracking-widest font-bold transition-all"
-                                        >
-                                            Töröl
-                                        </button>
+                                        <div className="absolute bottom-5 right-5 flex gap-2 w-full justify-end pr-5">
+                                            <Link
+                                                href={`/dashboard/edit/${event.id}`}
+                                                className="bg-transparent border border-white/20 text-white hover:border-gold hover:text-gold px-3 py-1.5 rounded text-[10px] uppercase tracking-widest font-bold transition-all"
+                                            >
+                                                Szerkeszt
+                                            </Link>
+                                            <button
+                                                onClick={() => handleDelete(event.id)}
+                                                className="bg-transparent border border-red-500/50 text-red-400 hover:bg-red-500/20 px-3 py-1.5 rounded text-[10px] uppercase tracking-widest font-bold transition-all"
+                                            >
+                                                Töröl
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
                             ))}
