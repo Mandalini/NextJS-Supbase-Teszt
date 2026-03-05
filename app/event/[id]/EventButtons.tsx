@@ -1,9 +1,35 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { supabase } from '@/lib/supabase';
 
-export default function EventButtons() {
+export default function EventButtons({ eventId }: { eventId: string }) {
     const [copied, setCopied] = useState(false);
+    const [userId, setUserId] = useState<string | null>(null);
+    const [isAttending, setIsAttending] = useState<boolean>(false);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const checkStatus = async () => {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+                setUserId(user.id);
+                // Ellenőrizzük, részt vesz-e
+                const { data, error } = await supabase
+                    .from('event_attendees')
+                    .select('id')
+                    .eq('event_id', eventId)
+                    .eq('user_id', user.id)
+                    .single();
+
+                if (data && !error) {
+                    setIsAttending(true);
+                }
+            }
+            setLoading(false);
+        };
+        checkStatus();
+    }, [eventId]);
 
     const handleCopy = () => {
         navigator.clipboard.writeText(window.location.href);
@@ -11,15 +37,64 @@ export default function EventButtons() {
         setTimeout(() => setCopied(false), 2000);
     };
 
+    const toggleRsvp = async () => {
+        const { data: { user } } = await supabase.auth.getUser();
+
+        if (!user) {
+            alert("Kérlek, jelentkezz be a részvétel jelzéséhez!");
+            return;
+        }
+
+        const oldStatus = isAttending;
+        setIsAttending(!oldStatus);
+
+        if (oldStatus) {
+            // Törlés
+            const { error } = await supabase
+                .from('event_attendees')
+                .delete()
+                .eq('event_id', eventId)
+                .eq('user_id', user.id);
+
+            if (error) {
+                console.error(error);
+                setIsAttending(oldStatus);
+            } else {
+                window.dispatchEvent(new Event('rsvpChanged'));
+            }
+        } else {
+            // Hozzáadás extra adatokkal (email, név)
+            const { error } = await supabase
+                .from('event_attendees')
+                .insert([{
+                    event_id: eventId,
+                    user_id: user.id,
+                    user_email: user.email,
+                    user_display_name: user.user_metadata?.display_name || null
+                }]);
+
+            if (error) {
+                console.error(error);
+                setIsAttending(oldStatus);
+            } else {
+                window.dispatchEvent(new Event('rsvpChanged'));
+            }
+        }
+    };
+
     return (
         <div className="mt-16 pt-10 border-t border-white/10 flex flex-col sm:flex-row gap-4 items-center justify-center">
-            {/* Részt veszek (Későbbi fejlesztés, most egy fiktív vizuális effekt) */}
+            {/* Részt veszek */}
             <button
-                className="bg-gradient-to-r from-[#5b42ff] to-[#9d4edd] text-white font-extrabold px-10 py-4 rounded-xl shadow-[0_0_20px_rgba(91,66,255,0.4)] hover:shadow-[0_0_30px_rgba(91,66,255,0.6)] hover:-translate-y-1 transition-all duration-300 uppercase tracking-widest text-sm w-full sm:w-auto relative overflow-hidden group"
-                onClick={() => alert("Résztvétel rögzítése hamarosan!")}
+                className={`text-white font-extrabold px-10 py-4 rounded-xl relative overflow-hidden group uppercase tracking-widest text-sm w-full sm:w-auto transition-all duration-300 ${isAttending
+                    ? 'bg-transparent border border-gold text-gold hover:bg-gold/10'
+                    : 'bg-gradient-to-r from-[#5b42ff] to-[#9d4edd] shadow-[0_0_20px_rgba(91,66,255,0.4)] hover:shadow-[0_0_30px_rgba(91,66,255,0.6)] hover:-translate-y-1'
+                    } ${loading ? 'opacity-50 pointer-events-none' : ''}`}
+                onClick={toggleRsvp}
+                disabled={loading}
             >
-                <div className="absolute inset-0 w-full h-full bg-white/20 -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]"></div>
-                Részt Veszek (Hamarosan)
+                {!isAttending && <div className="absolute inset-0 w-full h-full bg-white/20 -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]"></div>}
+                {loading ? 'Betöltés...' : isAttending ? '✓ Részt veszel' : 'Részt Veszek'}
             </button>
 
             {/* Link másolása gomb */}

@@ -2,6 +2,7 @@ import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import EventButtons from './EventButtons';
+import AttendeesList from './AttendeesList';
 
 export const revalidate = 0;
 
@@ -114,8 +115,11 @@ export default async function PublicEventPage({ params }: { params: Promise<{ id
                         )}
                     </div>
 
-                    {/* Megosztás / Jelentkezés szekció (ideiglenes gombok) */}
-                    <EventButtons />
+                    {/* Megosztás / Jelentkezés szekció */}
+                    <EventButtons eventId={event.id} />
+
+                    {/* Résztvevők listája */}
+                    <AttendeesList eventId={event.id} />
 
                 </div>
             </main>
