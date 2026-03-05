@@ -21,58 +21,78 @@ export default async function Home() {
     const publicEvents = events || [];
 
     return (
-        <div className="min-h-screen bg-gray-50 flex flex-col">
-            {/* Fejléc */}
-            <header className="bg-white shadow">
-                <div className="max-w-6xl mx-auto px-4 py-6 flex justify-between items-center">
-                    <h1 className="text-2xl font-bold text-gray-900">Minden Esemény</h1>
+        <div className="min-h-screen flex flex-col items-center">
+            {/* Fejléc - REZGÉSKAPU stílusban */}
+            <header className="w-full glass-panel border-b border-white/10 sticky top-0 z-50">
+                <div className="max-w-6xl mx-auto px-6 py-5 flex justify-between items-center">
+                    <div className="flex items-center gap-3">
+                        <div className="text-3xl font-light tracking-[0.2em] text-white">
+                            REZGÉS<span className="text-gold font-bold glow-text">KAPU</span>
+                        </div>
+                        <div className="hidden sm:block text-[10px] tracking-widest text-[#5b42ff] uppercase ml-4 border-l border-[#5b42ff]/30 pl-4">
+                            Esemény Platform
+                        </div>
+                    </div>
                     <nav>
                         <Link
                             href="/dashboard"
-                            className="bg-blue-600 text-white px-5 py-2 rounded-md hover:bg-blue-700 transition"
+                            className="bg-transparent border border-[#5b42ff] text-white px-6 py-2 rounded-[4px] hover:bg-[#5b42ff]/20 transition-all duration-300 uppercase tracking-widest text-xs font-semibold glow-border"
                         >
-                            Irány a Vezérlőpult
+                            Vezérlőpult
                         </Link>
                     </nav>
                 </div>
             </header>
 
             {/* Fő tartalom */}
-            <main className="flex-grow max-w-6xl mx-auto px-4 py-12 w-full">
-                <div className="text-center mb-12">
-                    <h2 className="text-4xl font-extrabold text-gray-900 mb-4">
-                        Fedezd fel a Nyitott Rendezvényeket
+            <main className="flex-grow max-w-6xl mx-auto px-4 py-16 w-full relative">
+
+                {/* Háttér dekokráció hópelyhek / csillagok glow illúzió */}
+                <div className="absolute top-1/4 left-0 w-96 h-96 bg-[#5b42ff] rounded-full mix-blend-screen filter blur-[150px] opacity-20 pointer-events-none"></div>
+                <div className="absolute top-1/2 right-10 w-96 h-96 bg-[#ffc107] rounded-full mix-blend-screen filter blur-[200px] opacity-10 pointer-events-none"></div>
+
+                <div className="text-center mb-20 relative z-10">
+                    <h2 className="text-5xl md:text-7xl font-extralight text-white mb-6 tracking-tight">
+                        Fedezd fel a  <br /> <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#9d4edd] to-[#5b42ff] font-bold">Rendezvényeket</span>
                     </h2>
-                    <p className="text-xl text-gray-600">
-                        Böngéssz mások publikus eseményei között!
+                    <p className="text-lg text-gray-400 font-light tracking-wide max-w-2xl mx-auto">
+                        Csatlakozz a digitális partneri platformhoz, és légy részese a közösségi eseményeknek.
                     </p>
                 </div>
 
                 {publicEvents.length > 0 ? (
-                    <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+                    <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3 relative z-10">
                         {publicEvents.map((event) => (
                             <div
                                 key={event.id}
-                                className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300"
+                                className="glass-panel rounded-xl overflow-hidden hover:-translate-y-2 transition-transform duration-300 glow-border group"
                             >
-                                <div className="p-6">
-                                    <div className="uppercase tracking-wide text-sm text-blue-600 font-semibold mb-1">
-                                        {new Date(event.date).toLocaleDateString('hu-HU', {
-                                            year: 'numeric', month: 'long', day: 'numeric'
-                                        })}
+                                <div className="p-8">
+                                    <div className="flex items-center gap-3 mb-4">
+                                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#5b42ff] to-[#9d4edd] flex items-center justify-center shadow-[0_0_15px_rgba(91,66,255,0.4)]">
+                                            <span className="text-white text-xs font-bold">
+                                                {new Date(event.date).getDate()}
+                                            </span>
+                                        </div>
+                                        <div className="uppercase tracking-widest text-[10px] text-gray-400 font-semibold">
+                                            {new Date(event.date).toLocaleDateString('hu-HU', {
+                                                year: 'numeric', month: 'long'
+                                            })}
+                                        </div>
                                     </div>
-                                    <h3 className="block mt-1 text-lg leading-tight font-bold text-gray-900 mb-2">
+
+                                    <h3 className="block mt-1 text-2xl font-bold text-white mb-3 group-hover:text-gold transition-colors">
                                         {event.title}
                                     </h3>
 
                                     {event.location && (
-                                        <p className="text-gray-600 text-sm mb-3 flex items-center gap-1">
-                                            <span>📍</span> {event.location}
+                                        <p className="text-gray-400 text-sm mb-4 flex items-center gap-2 font-mono">
+                                            <span className="text-gold">📍</span> {event.location}
                                         </p>
                                     )}
 
                                     {event.description && (
-                                        <p className="mt-2 text-gray-700 line-clamp-4">
+                                        <p className="mt-4 text-gray-300 line-clamp-4 leading-relaxed font-light">
                                             {event.description}
                                         </p>
                                     )}
@@ -81,18 +101,18 @@ export default async function Home() {
                         ))}
                     </div>
                 ) : (
-                    <div className="text-center py-20 bg-white rounded-xl shadow-sm border border-gray-100">
-                        <span className="text-4xl mb-4 block">📅</span>
-                        <h3 className="text-lg font-medium text-gray-900">Jelenleg nincs publikus esemény.</h3>
-                        <p className="mt-1 text-gray-500">Még senki nem hozott létre nyílt rendezvényt.</p>
+                    <div className="text-center py-24 glass-panel rounded-2xl glow-border relative z-10">
+                        <span className="text-6xl mb-6 block text-white opacity-20">(( • ))</span>
+                        <h3 className="text-2xl font-light text-white mb-2">Jelenleg nincs <span className="font-bold text-gold">publikus</span> esemény.</h3>
+                        <p className="mt-2 text-gray-400">Térj vissza később, vagy hozz létre egy újat a vezérlőpulton.</p>
                     </div>
                 )}
             </main>
 
             {/* Lábléc */}
-            <footer className="bg-white py-6 border-t border-gray-200 mt-auto">
-                <div className="max-w-6xl mx-auto px-4 text-center text-gray-500 text-sm">
-                    &copy; {new Date().getFullYear()} My Event App
+            <footer className="w-full glass-panel border-t border-white/5 py-8 mt-auto z-10">
+                <div className="max-w-6xl mx-auto px-4 text-center text-gray-500 text-xs tracking-widest uppercase">
+                    &copy; {new Date().getFullYear()} REZGÉSKAPU ESEMÉNYEK
                 </div>
             </footer>
         </div>

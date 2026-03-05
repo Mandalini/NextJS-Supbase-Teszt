@@ -1,26 +1,42 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #0b101e; /* Rezgéskapu sötét háttér */
+  --foreground: #e2e8f0; /* Világos szöveg */
+  
+  /* Brand színek */
+  --color-brand-gold: #ffc107;
+  --color-brand-blue: #5b42ff;
+  --color-brand-purple: #9d4edd;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --color-gold: var(--color-brand-gold);
+  --color-brand-purple: var(--color-brand-purple);
 }
 
 body {
-  background: var(--background);
+  background-color: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: 'Inter', Arial, Helvetica, sans-serif;
+}
+
+/* Glassmorphism effektek / glow kártyákhoz */
+.glass-panel {
+  background: rgba(30, 41, 59, 0.4);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+}
+
+.glow-text {
+  text-shadow: 0 0 10px rgba(255, 193, 7, 0.5), 0 0 20px rgba(255, 193, 7, 0.3);
+}
+
+.glow-border:hover {
+  box-shadow: 0 0 15px rgba(91, 66, 255, 0.6);
+  border-color: rgba(91, 66, 255, 0.8);
 }

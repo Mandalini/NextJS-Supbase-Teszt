@@ -83,79 +83,79 @@ export default function EditEventPage() {
     };
 
     if (fetching) {
-        return <div className="p-8 text-center text-gray-500">Adatok betöltése...</div>;
+        return <div className="p-8 text-center text-gray-400 glow-text min-h-screen flex items-center justify-center">Esemény betöltése...</div>;
     }
 
     return (
-        <div className="p-8 max-w-2xl mx-auto">
-            <h1 className="text-3xl font-bold mb-8">Esemény szerkesztése</h1>
+        <div className="min-h-screen p-8 max-w-3xl mx-auto flex flex-col justify-center">
+            <h1 className="text-4xl font-extralight text-white mb-8">ESEMÉNY <span className="text-gold font-bold glow-text">SZERKESZTÉSE</span></h1>
 
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} className="glass-panel p-8 rounded-2xl glow-border space-y-6 transition-all duration-300">
                 <div>
-                    <label className="block text-sm font-medium mb-1">Cím *</label>
+                    <label className="block text-xs uppercase tracking-widest text-gray-400 mb-2 font-bold">Cím *</label>
                     <input
                         type="text"
                         required
-                        className="w-full border rounded p-2"
+                        className="w-full bg-black/40 border border-white/20 rounded-xl p-3 text-white focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold transition-colors"
                         value={formData.title}
                         onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                     />
                 </div>
 
                 <div>
-                    <label className="block text-sm font-medium mb-1">Dátum *</label>
+                    <label className="block text-xs uppercase tracking-widest text-gray-400 mb-2 font-bold">Dátum *</label>
                     <input
                         type="date"
                         required
-                        className="w-full border rounded p-2"
+                        className="w-full bg-black/40 border border-white/20 rounded-xl p-3 text-white focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold transition-colors"
                         value={formData.date}
                         onChange={(e) => setFormData({ ...formData, date: e.target.value })}
                     />
                 </div>
 
                 <div>
-                    <label className="block text-sm font-medium mb-1">Helyszín</label>
+                    <label className="block text-xs uppercase tracking-widest text-gray-400 mb-2 font-bold">Helyszín</label>
                     <input
                         type="text"
-                        className="w-full border rounded p-2"
+                        className="w-full bg-black/40 border border-white/20 rounded-xl p-3 text-white focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold transition-colors"
                         value={formData.location}
                         onChange={(e) => setFormData({ ...formData, location: e.target.value })}
                     />
                 </div>
 
                 <div>
-                    <label className="block text-sm font-medium mb-1">Leírás</label>
+                    <label className="block text-xs uppercase tracking-widest text-gray-400 mb-2 font-bold">Leírás</label>
                     <textarea
-                        className="w-full border rounded p-2"
+                        className="w-full bg-black/40 border border-white/20 rounded-xl p-3 text-white focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold transition-colors"
                         rows={4}
                         value={formData.description}
                         onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                     ></textarea>
                 </div>
 
-                <div className="flex items-center mt-4">
+                <div className="flex items-center mt-4 bg-black/20 p-4 rounded-xl border border-white/5">
                     <input
                         type="checkbox"
                         id="is_public"
-                        className="mr-2 w-4 h-4"
+                        className="mr-3 w-5 h-5 accent-[#5b42ff] rounded border-white/20 cursor-pointer"
                         checked={formData.is_public}
                         onChange={(e) => setFormData({ ...formData, is_public: e.target.checked })}
                     />
-                    <label htmlFor="is_public">Publikus esemény (mások is láthatják)</label>
+                    <label htmlFor="is_public" className="text-sm font-medium text-gray-300 cursor-pointer select-none">Publikus esemény (megjelenik a kezdőlapon)</label>
                 </div>
 
-                <div className="pt-6 flex gap-4">
+                <div className="pt-8 flex flex-col sm:flex-row gap-4">
                     <button
                         type="submit"
                         disabled={loading}
-                        className="bg-yellow-500 text-white px-6 py-2 rounded hover:bg-yellow-600 disabled:opacity-50"
+                        className="flex-1 bg-gradient-to-r from-gold to-yellow-600 text-black font-extrabold px-6 py-3 rounded-xl hover:shadow-[0_0_20px_rgba(255,193,7,0.5)] transition-all duration-300 disabled:opacity-50 uppercase tracking-widest text-sm"
                     >
                         {loading ? 'Mentés...' : 'Változtatások mentése'}
                     </button>
                     <button
                         type="button"
                         onClick={() => router.push('/dashboard')}
-                        className="bg-gray-200 text-gray-800 px-6 py-2 rounded hover:bg-gray-300"
+                        className="flex-1 bg-transparent border border-white/20 text-white hover:bg-white/10 px-6 py-3 rounded-xl transition-all uppercase tracking-widest text-sm font-bold"
                     >
                         Mégse
                     </button>
