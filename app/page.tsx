@@ -33,6 +33,8 @@ export default async function Home() {
             </div>
 
             <h1 className="text-4xl font-bold mb-8">Items from Supabase</h1>
+            {/* Ide tesszük a verziószámot! */}
+            <p className="text-blue-500 font-bold mb-8">Verzió: 1.0.1 (CI/CD Vercel teszt)</p>
 
             {items.length === 0 ? (
                 <p>No items found.</p>
