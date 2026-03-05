@@ -19,6 +19,25 @@ export default function DashboardPage() {
         router.refresh(); // Törli a Next.js cache-t, így a middleware rögtön észleli a változást
     };
 
+    // Törlés függvény
+    const handleDelete = async (id: string) => {
+        if (!confirm('Biztosan törölni szeretnéd ezt az eseményt?')) return;
+
+        // Itt nem mutatunk betöltő ikont, rögtön meghívjuk a DB-t
+        const { error } = await supabase
+            .from('events')
+            .delete()
+            .eq('id', id);
+
+        if (error) {
+            console.error('Hiba a törlés során:', error);
+            alert('Hiba történt a törlés során.');
+        } else {
+            // Frissítjük a state-et a törölt elem nélkül
+            setEvents(events.filter(event => event.id !== id));
+        }
+    };
+
     useEffect(() => {
         const fetchData = async () => {
             // 1. Felhasználó ellenőrzése
@@ -80,17 +99,33 @@ export default function DashboardPage() {
             {events.length > 0 ? (
                 <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                     {events.map((event) => (
-                        <div key={event.id} className="border border-gray-200 p-5 rounded-lg shadow-sm hover:shadow-md transition-shadow">
+                        <div key={event.id} className="border border-gray-200 p-5 rounded-lg shadow-sm hover:shadow-md transition-shadow relative min-h-[220px]">
                             <h3 className="font-bold text-xl mb-2">{event.title}</h3>
                             <p className="text-blue-600 font-medium mb-2">
                                 {new Date(event.date).toLocaleDateString('hu-HU')}
                             </p>
-                            {event.location && (
+                            {event.location && ( // Csak akkor jelenik meg, ha nem üres
                                 <p className="text-gray-600 text-sm mb-2">📍 {event.location}</p>
                             )}
                             {event.description && (
-                                <p className="text-gray-700 mt-3 line-clamp-3">{event.description}</p>
+                                <p className="text-gray-700 mt-3 line-clamp-3 mb-10">{event.description}</p>
                             )}
+
+                            {/* Szerkesztés és Törlés gombok egy fix helyen, alul jobb oldalt */}
+                            <div className="absolute bottom-5 right-5 flex gap-2">
+                                <Link
+                                    href={`/dashboard/edit/${event.id}`}
+                                    className="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1 rounded text-sm transition-colors"
+                                >
+                                    Szerkesztés
+                                </Link>
+                                <button
+                                    onClick={() => handleDelete(event.id)}
+                                    className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-sm transition-colors"
+                                >
+                                    Törlés
+                                </button>
+                            </div>
                         </div>
                     ))}
                 </div>
