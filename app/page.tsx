@@ -1,7 +1,7 @@
 // app/page.tsx
 import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
-import ThemeSwitcher from './components/ThemeSwitcher';
+import HeaderActions from './components/HeaderActions';
 
 // Ezzel jelezzük a Next.js-nek, hogy ne cache-elje statikusan a lekérdezést, 
 // hanem minden letöltéskor frissítse, hogy az új események is ott legyenek.
@@ -34,19 +34,9 @@ export default async function Home() {
                             Esemény Platform
                         </div>
                     </div>
-                    <nav>
-                        <Link
-                            href="/dashboard"
-                            className="bg-transparent border border-brand-blue text-white px-6 py-2 rounded-[4px] hover:bg-brand-blue/20 transition-all duration-300 uppercase tracking-widest text-xs font-semibold glow-border"
-                        >
-                            Vezérlőpult
-                        </Link>
-                    </nav>
+                    <HeaderActions />
                 </div>
             </header>
-
-            {/* Témaválasztó sáv */}
-            <ThemeSwitcher />
 
             {/* Fő tartalom */}
             <main className="flex-grow max-w-6xl mx-auto px-4 py-16 w-full relative">

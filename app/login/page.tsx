@@ -17,7 +17,7 @@ export default function AuthPage() {
             async (event, session) => {
                 setSession(session);
                 if (session) {
-                    router.push('/dashboard');
+                    router.push('/');
                 }
             }
         );
@@ -27,7 +27,7 @@ export default function AuthPage() {
             setSession(session);
             if (session) {
                 // ITT VOLT A MÁSIK '/', EZT IS ÁTÍRTUK:
-                router.push('/dashboard');
+                router.push('/');
             }
         });
 
@@ -105,8 +105,8 @@ export default function AuthPage() {
                         }
                     }}
                     providers={['google']}
-                    // A REDIRECT-ET IS A DASHBOARDRA IRÁNYÍTJUK:
-                    redirectTo={`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/dashboard`}
+                    // A REDIRECT-ET IS A KEZDŐLAPRA IRÁNYÍTJUK:
+                    redirectTo={`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/`}
                     localization={{
                         variables: {
                             sign_in: {

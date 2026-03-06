@@ -18,25 +18,43 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 export function ThemeProvider({ children }: { children: ReactNode }) {
     const { user, isLoading } = useAuth();
     const [theme, setThemeState] = useState<ThemeType>('default');
+    const [overriddenTheme, setOverriddenTheme] = useState(false);
 
     useEffect(() => {
-        const storedTheme = localStorage.getItem('app-theme') as ThemeType;
-        if (storedTheme) {
-            setThemeState(storedTheme);
-            document.documentElement.setAttribute('data-theme', storedTheme === 'default' ? '' : storedTheme);
+        const urlParams = new URLSearchParams(window.location.search);
+        const urlTheme = urlParams.get('theme') as ThemeType;
+        const validThemes = ['default', 'green', 'gong', 'rezgesekhaza', 'cyberpunk'];
+
+        let initialTheme = 'default' as ThemeType;
+
+        if (urlTheme && validThemes.includes(urlTheme)) {
+            initialTheme = urlTheme;
+            setOverriddenTheme(true);
+        } else {
+            const storedTheme = localStorage.getItem('app-theme') as ThemeType;
+            if (storedTheme) {
+                initialTheme = storedTheme;
+            }
         }
+
+        setThemeState(initialTheme);
+        document.documentElement.setAttribute('data-theme', initialTheme === 'default' ? '' : initialTheme);
+        localStorage.setItem('app-theme', initialTheme);
     }, []);
 
     useEffect(() => {
         if (!isLoading && user && user.user_metadata?.theme) {
             const dbTheme = user.user_metadata.theme as ThemeType;
-            if (dbTheme !== theme) {
+
+            // Ha NEM az URL-ből töltöttük be induláskor, alkalmazzuk a profil témát
+            if (!overriddenTheme) {
+                // Biztos, ami biztos, always set if user object is present
                 setThemeState(dbTheme);
                 localStorage.setItem('app-theme', dbTheme);
                 document.documentElement.setAttribute('data-theme', dbTheme === 'default' ? '' : dbTheme);
             }
         }
-    }, [user, isLoading]);
+    }, [user, isLoading, overriddenTheme]);
 
     const setTheme = (newTheme: ThemeType) => {
         setThemeState(newTheme);
