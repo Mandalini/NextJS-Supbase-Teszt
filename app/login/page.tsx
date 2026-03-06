@@ -37,18 +37,14 @@ export default function AuthPage() {
     }, [router]);
 
     if (session) {
-        return (
-            <div className="flex min-h-screen flex-col items-center justify-center p-24">
-                <h1 className="text-2xl">Már be vagy jelentkezve. Átirányítás...</h1>
-            </div>
-        );
+        return null;
     }
 
     return (
         <main className="flex min-h-screen flex-col items-center justify-center p-8 bg-black relative">
             {/* Dekorációs elemek háttérben */}
-            <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-[#5b42ff] rounded-full mix-blend-screen filter blur-[150px] opacity-20 pointer-events-none"></div>
-            <div className="absolute top-3/4 right-1/4 w-96 h-96 bg-[#ffc107] rounded-full mix-blend-screen filter blur-[150px] opacity-10 pointer-events-none"></div>
+            <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-brand-blue rounded-full mix-blend-screen filter blur-[150px] opacity-20 pointer-events-none"></div>
+            <div className="absolute top-3/4 right-1/4 w-96 h-96 bg-gold rounded-full mix-blend-screen filter blur-[150px] opacity-10 pointer-events-none"></div>
 
             <div className="w-full max-w-md glass-panel p-10 rounded-2xl glow-border relative z-10 shadow-2xl">
 
@@ -65,24 +61,24 @@ export default function AuthPage() {
                         variables: {
                             default: {
                                 colors: {
-                                    brand: '#ffc107',
+                                    brand: 'var(--color-gold)',
                                     brandAccent: '#e0a800',
                                     brandButtonText: 'black',
                                     defaultButtonBackground: 'rgba(30, 41, 59, 0.4)',
-                                    defaultButtonBackgroundHover: 'rgba(91, 66, 255, 0.4)',
+                                    defaultButtonBackgroundHover: 'var(--color-brand-blue)',
                                     defaultButtonBorder: 'rgba(255,255,255,0.1)',
                                     defaultButtonText: 'white',
                                     dividerBackground: 'rgba(255,255,255,0.1)',
                                     inputBackground: 'rgba(0,0,0,0.4)',
                                     inputBorder: 'rgba(255,255,255,0.2)',
-                                    inputBorderHover: '#ffc107',
-                                    inputBorderFocus: '#ffc107',
+                                    inputBorderHover: 'var(--color-gold)',
+                                    inputBorderFocus: 'var(--color-gold)',
                                     inputText: 'white',
                                     inputPlaceholder: 'rgba(255,255,255,0.4)',
-                                    messageText: '#ffc107',
+                                    messageText: 'var(--color-gold)',
                                     messageTextDanger: '#ff4d4f',
-                                    anchorTextColor: '#5b42ff',
-                                    anchorTextHoverColor: '#9d4edd',
+                                    anchorTextColor: 'var(--color-brand-blue)',
+                                    anchorTextHoverColor: 'var(--color-brand-purple)',
                                 },
                                 space: {
                                     buttonPadding: '14px 16px',

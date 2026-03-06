@@ -63,14 +63,15 @@ export default function EventButtons({ eventId }: { eventId: string }) {
                 window.dispatchEvent(new Event('rsvpChanged'));
             }
         } else {
-            // Hozzáadás extra adatokkal (email, név)
+            // Hozzáadás extra adatokkal (email, név, avatar)
             const { error } = await supabase
                 .from('event_attendees')
                 .insert([{
                     event_id: eventId,
                     user_id: user.id,
                     user_email: user.email,
-                    user_display_name: user.user_metadata?.display_name || null
+                    user_display_name: user.user_metadata?.display_name || null,
+                    user_avatar_url: user.user_metadata?.avatar_url || null
                 }]);
 
             if (error) {
@@ -88,7 +89,7 @@ export default function EventButtons({ eventId }: { eventId: string }) {
             <button
                 className={`text-white font-extrabold px-10 py-4 rounded-xl relative overflow-hidden group uppercase tracking-widest text-sm w-full sm:w-auto transition-all duration-300 ${isAttending
                     ? 'bg-transparent border border-gold text-gold hover:bg-gold/10'
-                    : 'bg-gradient-to-r from-[#5b42ff] to-[#9d4edd] shadow-[0_0_20px_rgba(91,66,255,0.4)] hover:shadow-[0_0_30px_rgba(91,66,255,0.6)] hover:-translate-y-1'
+                    : 'bg-gradient-to-r from-brand-blue to-brand-purple shadow-[0_0_20px_var(--color-brand-blue)] hover:shadow-[0_0_30px_var(--color-brand-blue)] hover:-translate-y-1'
                     } ${loading ? 'opacity-50 pointer-events-none' : ''}`}
                 onClick={toggleRsvp}
                 disabled={loading}

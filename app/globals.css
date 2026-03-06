@@ -2,14 +2,52 @@
 
 :root {
   --background: #0b101e;
-  /* Rezgéskapu sötét háttér */
   --foreground: #e2e8f0;
-  /* Világos szöveg */
-
-  /* Brand színek */
   --color-brand-gold: #ffc107;
   --color-brand-blue: #5b42ff;
   --color-brand-purple: #9d4edd;
+}
+
+/* 1. Skin: Sötétzöld */
+[data-theme="green"] {
+  --background: #051810;
+  --foreground: #d1fae5;
+  --color-brand-gold: #10b981;
+  --color-brand-blue: #059669;
+  --color-brand-purple: #047857;
+}
+
+/* 2. Skin: Gong Akadémia (Mély Bordó & Arany) */
+[data-theme="gong"] {
+  --background: #140505;
+  --foreground: #fde8e8;
+  --color-brand-gold: #d2b48c;
+  /* elegáns arany/homok */
+  --color-brand-blue: #a80000;
+  /* domináns bordó */
+  --color-brand-purple: #5c0000;
+  /* mélyvörös */
+}
+
+/* 3. Skin: Rezgések Háza (meleg barnás-narancsos-vöröses) */
+[data-theme="rezgesekhaza"] {
+  --background: #3c2415;
+  --foreground: #ffeee0;
+  --color-brand-gold: #ff8c42;
+  --color-brand-blue: #d94b2b;
+  --color-brand-purple: #852e1c;
+}
+
+/* 4. Skin: Modern Cyberpunk (saját) */
+[data-theme="cyberpunk"] {
+  --background: #09090b;
+  --foreground: #f0fdfa;
+  --color-brand-gold: #f43f5e;
+  /* Neon Rózsaszín/Piros */
+  --color-brand-blue: #0ea5e9;
+  /* Neon Kék */
+  --color-brand-purple: #8b5cf6;
+  /* Neon Lila */
 }
 
 @theme inline {
@@ -17,30 +55,38 @@
   --color-foreground: var(--foreground);
   --color-gold: var(--color-brand-gold);
   --color-brand-purple: var(--color-brand-purple);
+  --color-brand-blue: var(--color-brand-blue);
 }
 
 body {
   background-color: var(--background);
   color: var(--foreground);
   font-family: 'Inter', Arial, Helvetica, sans-serif;
+  transition: background-color 0.5s ease;
 }
 
 /* Glassmorphism effektek / glow kártyákhoz */
 .glass-panel {
-  background: rgba(30, 41, 59, 0.4);
+  background: color-mix(in srgb, var(--background) 80%, transparent);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid color-mix(in srgb, var(--foreground) 10%, transparent);
   box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+  transition: background-color 0.5s ease, border-color 0.5s ease;
 }
 
 .glow-text {
-  text-shadow: 0 0 10px rgba(255, 193, 7, 0.5), 0 0 20px rgba(255, 193, 7, 0.3);
+  text-shadow: 0 0 10px color-mix(in srgb, var(--color-brand-gold) 50%, transparent),
+    0 0 20px color-mix(in srgb, var(--color-brand-gold) 30%, transparent);
+}
+
+.glow-border {
+  transition: box-shadow 0.3s ease, border-color 0.3s ease;
 }
 
 .glow-border:hover {
-  box-shadow: 0 0 15px rgba(91, 66, 255, 0.6);
-  border-color: rgba(91, 66, 255, 0.8);
+  box-shadow: 0 0 15px color-mix(in srgb, var(--color-brand-blue) 60%, transparent);
+  border-color: color-mix(in srgb, var(--color-brand-blue) 80%, transparent);
 }
 
 @keyframes shimmer {

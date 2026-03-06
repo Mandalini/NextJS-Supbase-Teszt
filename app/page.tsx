@@ -1,6 +1,7 @@
 // app/page.tsx
 import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
+import ThemeSwitcher from './components/ThemeSwitcher';
 
 // Ezzel jelezzük a Next.js-nek, hogy ne cache-elje statikusan a lekérdezést, 
 // hanem minden letöltéskor frissítse, hogy az új események is ott legyenek.
@@ -29,14 +30,14 @@ export default async function Home() {
                         <div className="text-3xl font-light tracking-[0.2em] text-white">
                             REZGÉS<span className="text-gold font-bold glow-text">KAPU</span>
                         </div>
-                        <div className="hidden sm:block text-[10px] tracking-widest text-[#5b42ff] uppercase ml-4 border-l border-[#5b42ff]/30 pl-4">
+                        <div className="hidden sm:block text-[10px] tracking-widest text-brand-blue uppercase ml-4 border-l border-brand-blue/30 pl-4">
                             Esemény Platform
                         </div>
                     </div>
                     <nav>
                         <Link
                             href="/dashboard"
-                            className="bg-transparent border border-[#5b42ff] text-white px-6 py-2 rounded-[4px] hover:bg-[#5b42ff]/20 transition-all duration-300 uppercase tracking-widest text-xs font-semibold glow-border"
+                            className="bg-transparent border border-brand-blue text-white px-6 py-2 rounded-[4px] hover:bg-brand-blue/20 transition-all duration-300 uppercase tracking-widest text-xs font-semibold glow-border"
                         >
                             Vezérlőpult
                         </Link>
@@ -44,16 +45,19 @@ export default async function Home() {
                 </div>
             </header>
 
+            {/* Témaválasztó sáv */}
+            <ThemeSwitcher />
+
             {/* Fő tartalom */}
             <main className="flex-grow max-w-6xl mx-auto px-4 py-16 w-full relative">
 
                 {/* Háttér dekokráció hópelyhek / csillagok glow illúzió */}
-                <div className="absolute top-1/4 left-0 w-96 h-96 bg-[#5b42ff] rounded-full mix-blend-screen filter blur-[150px] opacity-20 pointer-events-none"></div>
-                <div className="absolute top-1/2 right-10 w-96 h-96 bg-[#ffc107] rounded-full mix-blend-screen filter blur-[200px] opacity-10 pointer-events-none"></div>
+                <div className="absolute top-1/4 left-0 w-96 h-96 bg-brand-blue rounded-full mix-blend-screen filter blur-[150px] opacity-20 pointer-events-none"></div>
+                <div className="absolute top-1/2 right-10 w-96 h-96 bg-gold rounded-full mix-blend-screen filter blur-[200px] opacity-10 pointer-events-none"></div>
 
                 <div className="text-center mb-20 relative z-10">
                     <h2 className="text-5xl md:text-7xl font-extralight text-white mb-6 tracking-tight">
-                        Fedezd fel a  <br /> <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#9d4edd] to-[#5b42ff] font-bold">Rendezvényeket</span>
+                        Fedezd fel a  <br /> <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-purple to-brand-blue font-bold">Rendezvényeket</span>
                     </h2>
                     <p className="text-lg text-gray-400 font-light tracking-wide max-w-2xl mx-auto">
                         Csatlakozz a digitális partneri platformhoz, és légy részese a közösségi eseményeknek.
@@ -77,7 +81,7 @@ export default async function Home() {
                                 <div className="p-8 flex-grow flex flex-col justify-between">
                                     <div>
                                         <div className="flex items-center gap-3 mb-4">
-                                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#5b42ff] to-[#9d4edd] flex items-center justify-center shadow-[0_0_15px_rgba(91,66,255,0.4)] shrink-0">
+                                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-brand-blue to-brand-purple flex items-center justify-center shadow-[0_0_15px_var(--color-brand-blue)] shrink-0">
                                                 <span className="text-white text-xs font-bold">
                                                     {new Date(event.date).getDate()}
                                                 </span>

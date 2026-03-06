@@ -128,7 +128,7 @@ export default function NewEventPage() {
                     <input
                         type="checkbox"
                         id="is_public"
-                        className="mr-3 w-5 h-5 accent-[#5b42ff] rounded border-white/20 cursor-pointer"
+                        className="mr-3 w-5 h-5 accent-brand-blue rounded border-white/20 cursor-pointer"
                         checked={formData.is_public}
                         onChange={(e) => setFormData({ ...formData, is_public: e.target.checked })}
                     />
@@ -145,7 +145,7 @@ export default function NewEventPage() {
                                 setImageFile(e.target.files[0]);
                             }
                         }}
-                        className="w-full bg-black/40 border border-white/20 rounded-xl p-3 text-white focus:outline-none focus:border-gold file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-[#5b42ff]/20 file:text-[#5b42ff] hover:file:bg-[#5b42ff]/30 transition-all cursor-pointer"
+                        className="w-full bg-black/40 border border-white/20 rounded-xl p-3 text-white focus:outline-none focus:border-gold file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-brand-blue/20 file:text-brand-blue hover:file:bg-brand-blue/30 transition-all cursor-pointer"
                     />
                 </div>
 
@@ -153,7 +153,7 @@ export default function NewEventPage() {
                     <button
                         type="submit"
                         disabled={loading}
-                        className="flex-1 bg-gradient-to-r from-[#5b42ff] to-[#9d4edd] text-white font-extrabold px-6 py-3 rounded-xl shadow-[0_0_15px_rgba(91,66,255,0.4)] hover:shadow-[0_0_25px_rgba(91,66,255,0.6)] transition-all duration-300 disabled:opacity-50 uppercase tracking-widest text-sm"
+                        className="flex-1 bg-gradient-to-r from-brand-blue to-brand-purple text-white font-extrabold px-6 py-3 rounded-xl shadow-[0_0_15px_var(--color-brand-blue)] hover:shadow-[0_0_25px_var(--color-brand-blue)] transition-all duration-300 disabled:opacity-50 uppercase tracking-widest text-sm"
                     >
                         {loading ? 'Mentés...' : 'Esemény mentése'}
                     </button>

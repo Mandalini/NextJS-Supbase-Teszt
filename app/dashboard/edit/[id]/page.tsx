@@ -169,7 +169,7 @@ export default function EditEventPage() {
                     <input
                         type="checkbox"
                         id="is_public"
-                        className="mr-3 w-5 h-5 accent-[#5b42ff] rounded border-white/20 cursor-pointer"
+                        className="mr-3 w-5 h-5 accent-brand-blue rounded border-white/20 cursor-pointer"
                         checked={formData.is_public}
                         onChange={(e) => setFormData({ ...formData, is_public: e.target.checked })}
                     />
@@ -193,7 +193,7 @@ export default function EditEventPage() {
                                 // Opcionális: a feltöltés gomb megnyomásakor már a feltöltött lesz látható ideiglenesen
                             }
                         }}
-                        className="w-full bg-black/40 border border-white/20 rounded-xl p-3 text-white focus:outline-none focus:border-gold file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-[#5b42ff]/20 file:text-[#5b42ff] hover:file:bg-[#5b42ff]/30 transition-all cursor-pointer mt-2"
+                        className="w-full bg-black/40 border border-white/20 rounded-xl p-3 text-white focus:outline-none focus:border-gold file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-brand-blue/20 file:text-brand-blue hover:file:bg-brand-blue/30 transition-all cursor-pointer mt-2"
                     />
                     {imageFile && <p className="text-xs text-gold mt-2">Új kép kiválasztva cserére: {imageFile.name}</p>}
                 </div>
@@ -202,7 +202,7 @@ export default function EditEventPage() {
                     <button
                         type="submit"
                         disabled={loading}
-                        className="flex-1 bg-gradient-to-r from-gold to-yellow-600 text-black font-extrabold px-6 py-3 rounded-xl hover:shadow-[0_0_20px_rgba(255,193,7,0.5)] transition-all duration-300 disabled:opacity-50 uppercase tracking-widest text-sm"
+                        className="flex-1 bg-gradient-to-r from-gold to-yellow-600 text-black font-extrabold px-6 py-3 rounded-xl hover:shadow-[0_0_20px_var(--color-gold)] transition-all duration-300 disabled:opacity-50 uppercase tracking-widest text-sm"
                     >
                         {loading ? 'Mentés...' : 'Változtatások mentése'}
                     </button>

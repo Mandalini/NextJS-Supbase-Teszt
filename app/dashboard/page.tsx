@@ -97,8 +97,12 @@ export default function DashboardPage() {
                             &larr; Kezdőlap
                         </Link>
                         <Link href="/profile" className="inline-flex items-center gap-2 hover:text-white transition-colors cursor-pointer group">
-                            <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-[#5b42ff] to-[#9d4edd] flex items-center justify-center text-white font-bold group-hover:shadow-[0_0_15px_rgba(91,66,255,0.6)] transition-all">
-                                {user?.user_metadata?.display_name ? user.user_metadata.display_name.charAt(0).toUpperCase() : user?.email?.charAt(0).toUpperCase()}
+                            <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-brand-blue to-brand-purple flex items-center justify-center text-white font-bold group-hover:shadow-[0_0_15px_var(--color-brand-blue)] transition-all overflow-hidden border border-brand-purple/50">
+                                {user?.user_metadata?.avatar_url ? (
+                                    <img src={user.user_metadata.avatar_url} alt="Profil" className="w-full h-full object-cover" />
+                                ) : (
+                                    user?.user_metadata?.display_name ? user.user_metadata.display_name.charAt(0).toUpperCase() : user?.email?.charAt(0).toUpperCase()
+                                )}
                             </div>
                             {user?.user_metadata?.display_name || user?.email}
                         </Link>
@@ -118,7 +122,7 @@ export default function DashboardPage() {
 
                     <div className="flex flex-wrap gap-4 items-center">
                         <div>
-                            <label className="block text-[10px] uppercase tracking-widest text-[#5b42ff] mb-1 font-bold">Keresés</label>
+                            <label className="block text-[10px] uppercase tracking-widest text-brand-blue mb-1 font-bold">Keresés</label>
                             <input
                                 type="text"
                                 placeholder="Esemény címe..."
@@ -128,7 +132,7 @@ export default function DashboardPage() {
                             />
                         </div>
                         <div>
-                            <label className="block text-[10px] uppercase tracking-widest text-[#5b42ff] mb-1 font-bold">Ettől</label>
+                            <label className="block text-[10px] uppercase tracking-widest text-brand-blue mb-1 font-bold">Ettől</label>
                             <input
                                 type="date"
                                 className="bg-black/40 border border-white/20 rounded px-3 py-2 text-white focus:outline-none focus:border-gold text-sm transition-colors"
@@ -137,7 +141,7 @@ export default function DashboardPage() {
                             />
                         </div>
                         <div>
-                            <label className="block text-[10px] uppercase tracking-widest text-[#5b42ff] mb-1 font-bold">Eddig</label>
+                            <label className="block text-[10px] uppercase tracking-widest text-brand-blue mb-1 font-bold">Eddig</label>
                             <input
                                 type="date"
                                 className="bg-black/40 border border-white/20 rounded px-3 py-2 text-white focus:outline-none focus:border-gold text-sm transition-colors"
@@ -161,20 +165,20 @@ export default function DashboardPage() {
                 <div className="flex items-center gap-4 mt-4 sm:mt-0">
                     <div className="flex bg-black/40 border border-white/10 rounded p-1">
                         <button
-                            className={`px-3 py-1 text-xs uppercase tracking-widest rounded transition-all ${viewMode === 'grid' ? 'bg-[#5b42ff] text-white shadow-[0_0_10px_rgba(91,66,255,0.5)]' : 'text-gray-500 hover:text-white'}`}
+                            className={`px-3 py-1 text-xs uppercase tracking-widest rounded transition-all ${viewMode === 'grid' ? 'bg-brand-blue text-white shadow-[0_0_10px_var(--color-brand-blue)]' : 'text-gray-500 hover:text-white'}`}
                             onClick={() => changeViewMode('grid')}
                         >
                             Kártyák
                         </button>
                         <button
-                            className={`px-3 py-1 text-xs uppercase tracking-widest rounded transition-all ${viewMode === 'table' ? 'bg-[#5b42ff] text-white shadow-[0_0_10px_rgba(91,66,255,0.5)]' : 'text-gray-500 hover:text-white'}`}
+                            className={`px-3 py-1 text-xs uppercase tracking-widest rounded transition-all ${viewMode === 'table' ? 'bg-brand-blue text-white shadow-[0_0_10px_var(--color-brand-blue)]' : 'text-gray-500 hover:text-white'}`}
                             onClick={() => changeViewMode('table')}
                         >
                             Táblázat
                         </button>
                     </div>
 
-                    <Link href="/dashboard/new" className="bg-gradient-to-r from-gold to-yellow-600 text-black px-4 py-2 rounded text-xs font-bold uppercase tracking-widest whitespace-nowrap hover:shadow-[0_0_15px_rgba(255,193,7,0.6)] transition-all">
+                    <Link href="/dashboard/new" className="bg-gradient-to-r from-gold to-yellow-600 text-black px-4 py-2 rounded text-xs font-bold uppercase tracking-widest whitespace-nowrap hover:shadow-[0_0_15px_var(--color-gold)] transition-all">
                         + Új Esemény
                     </Link>
                 </div>
@@ -197,7 +201,7 @@ export default function DashboardPage() {
                                         <div className="flex justify-between items-start mb-4">
                                             <h3 className="font-bold text-xl line-clamp-2 pr-2 text-white group-hover:text-gold transition-colors">{event.title}</h3>
                                             {event.is_public ? (
-                                                <span className="bg-[#5b42ff]/20 border border-[#5b42ff]/50 text-[#5b42ff] text-[10px] uppercase tracking-widest px-2 py-1 rounded-full font-bold whitespace-nowrap shrink-0 shadow-[0_0_10px_rgba(91,66,255,0.3)]">Publikus</span>
+                                                <span className="bg-brand-blue/20 border border-brand-blue/50 text-brand-blue text-[10px] uppercase tracking-widest px-2 py-1 rounded-full font-bold whitespace-nowrap shrink-0 shadow-[0_0_10px_var(--color-brand-blue)]">Publikus</span>
                                             ) : (
                                                 <span className="bg-gray-800 border border-gray-600 text-gray-300 text-[10px] uppercase tracking-widest px-2 py-1 rounded-full font-bold whitespace-nowrap shrink-0">Privát</span>
                                             )}
@@ -238,11 +242,11 @@ export default function DashboardPage() {
                             <table className="min-w-full divide-y divide-white/10 text-sm">
                                 <thead className="bg-black/20">
                                     <tr>
-                                        <th className="px-6 py-4 text-left font-bold text-[#5b42ff] uppercase tracking-widest text-[10px]">Cím</th>
-                                        <th className="px-6 py-4 text-left font-bold text-[#5b42ff] uppercase tracking-widest text-[10px]">Dátum</th>
-                                        <th className="px-6 py-4 text-left font-bold text-[#5b42ff] uppercase tracking-widest text-[10px]">Helyszín</th>
-                                        <th className="px-6 py-4 text-center font-bold text-[#5b42ff] uppercase tracking-widest text-[10px]">Státusz</th>
-                                        <th className="px-6 py-4 text-right font-bold text-[#5b42ff] uppercase tracking-widest text-[10px]">Műveletek</th>
+                                        <th className="px-6 py-4 text-left font-bold text-brand-blue uppercase tracking-widest text-[10px]">Cím</th>
+                                        <th className="px-6 py-4 text-left font-bold text-brand-blue uppercase tracking-widest text-[10px]">Dátum</th>
+                                        <th className="px-6 py-4 text-left font-bold text-brand-blue uppercase tracking-widest text-[10px]">Helyszín</th>
+                                        <th className="px-6 py-4 text-center font-bold text-brand-blue uppercase tracking-widest text-[10px]">Státusz</th>
+                                        <th className="px-6 py-4 text-right font-bold text-brand-blue uppercase tracking-widest text-[10px]">Műveletek</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-white/5">
@@ -253,7 +257,7 @@ export default function DashboardPage() {
                                             <td className="px-6 py-4 text-gray-400">{event.location || '-'}</td>
                                             <td className="px-6 py-4 text-center">
                                                 {event.is_public ? (
-                                                    <span className="bg-[#5b42ff]/20 border border-[#5b42ff]/50 text-[#5b42ff] text-[10px] uppercase tracking-widest px-2 py-1 rounded-full font-bold shadow-[0_0_10px_rgba(91,66,255,0.3)]">Publikus</span>
+                                                    <span className="bg-brand-blue/20 border border-brand-blue/50 text-brand-blue text-[10px] uppercase tracking-widest px-2 py-1 rounded-full font-bold shadow-[0_0_10px_var(--color-brand-blue)]">Publikus</span>
                                                 ) : (
                                                     <span className="bg-gray-800 border border-gray-600 text-gray-400 text-[10px] uppercase tracking-widest px-2 py-1 rounded-full font-bold">Privát</span>
                                                 )}
@@ -288,7 +292,7 @@ export default function DashboardPage() {
                     {events.length > 0 && (
                         <button
                             onClick={() => { setSearchQuery(''); setStartDate(''); setEndDate(''); }}
-                            className="bg-transparent border border-[#5b42ff] text-white hover:bg-[#5b42ff]/20 px-6 py-2 rounded text-xs uppercase tracking-widest font-bold transition-all glow-border"
+                            className="bg-transparent border border-brand-blue text-white hover:bg-brand-blue/20 px-6 py-2 rounded text-xs uppercase tracking-widest font-bold transition-all glow-border"
                         >
                             Szűrők Törlése
                         </button>
