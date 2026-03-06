@@ -6,9 +6,11 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { CustomDateInput } from '@/app/components/FormControls';
+import { usePermissions } from '@/app/hooks/usePermissions';
 
 export default function DashboardPage() {
     const router = useRouter();
+    const { hasPermission, permissions, loading: permsLoading } = usePermissions();
     const [user, setUser] = useState<any>(null);
     const [events, setEvents] = useState<any[]>([]);
     const [attendedEvents, setAttendedEvents] = useState<any[]>([]);
@@ -119,17 +121,34 @@ export default function DashboardPage() {
     };
 
     useEffect(() => {
+        // Megvárjuk, amíg a jogosultságok betöltődnek a usePermissions hookból.
+        // Ha még töltődnek, nem futtatjuk a lekérdezést.
+        if (permsLoading) return;
+
         const fetchData = async () => {
             const { data: { user }, error: userError } = await supabase.auth.getUser();
 
-            if (userError || !user) return;
+            if (userError || !user) {
+                router.push('/login');
+                return;
+            }
             setUser(user);
 
             // Fetch organized events
-            const { data: orgData, error: orgError } = await supabase
+            // A permissions tömb itt STABIL referencia, nem okoz újraalapítást
+            const canEditAll = permissions.some(p => p.action === 'edit_any_event');
+
+            let query = supabase
                 .from('events')
                 .select('*, event_attendees(count)')
                 .order('date', { ascending: true });
+
+            // Ha nincs 'edit_any_event' joga, akkor csak a sajátjait lássa a "Saját Eseményeim" alatt
+            if (!canEditAll) {
+                query = query.eq('created_by', user.id);
+            }
+
+            const { data: orgData, error: orgError } = await query;
 
             if (orgError) console.error('Hiba az események lekérdezésekor:', orgError);
             else setEvents(orgData || []);
@@ -145,7 +164,7 @@ export default function DashboardPage() {
             } else if (attData) {
                 const mapEvents = attData.map((d: any) => d.events);
                 // Sort array
-                mapEvents.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+                mapEvents.sort((a: any, b: any) => new Date(a.date).getTime() - new Date(b.date).getTime());
                 setAttendedEvents(mapEvents);
             }
 
@@ -153,7 +172,9 @@ export default function DashboardPage() {
         };
 
         fetchData();
-    }, [router]);
+        // permissions tömb változásakor fut le (csak egyszer, miután a hook betöltött).
+        // A hasPermission függvény NEM kerül ide, mert minden renderben új referenciát kap.
+    }, [permsLoading, permissions, router]);
 
     if (loading) {
         return <div className="p-8 text-center text-gray-500 glow-text">Adatok betöltése...</div>;
@@ -204,9 +225,16 @@ export default function DashboardPage() {
                                 <Link href="/" className="block px-4 py-3 text-sm text-gray-300 hover:text-brand-blue hover:bg-brand-blue/10 border-b border-white/5 transition-colors flex items-center gap-2">
                                     <span className="text-lg">&larr;</span> Kezdőlap
                                 </Link>
-                                <Link href="/dashboard/categories" className="block px-4 py-3 text-sm text-gray-300 hover:text-gold hover:bg-gold/10 transition-colors flex items-center gap-2 font-bold tracking-widest uppercase text-[10px]">
-                                    <span className="text-sm">🏷</span> Kategóriák Kezelése
-                                </Link>
+                                {hasPermission('manage_categories') && (
+                                    <Link href="/dashboard/categories" className="block px-4 py-3 text-sm text-gray-300 hover:text-gold hover:bg-gold/10 border-b border-white/5 transition-colors flex items-center gap-2 font-bold tracking-widest uppercase text-[10px]">
+                                        <span className="text-sm">🏷</span> Kategóriák Kezelése
+                                    </Link>
+                                )}
+                                {hasPermission('manage_roles') && (
+                                    <Link href="/dashboard/roles" className="block px-4 py-3 text-sm text-gray-300 hover:text-brand-purple hover:bg-brand-purple/10 transition-colors flex items-center gap-2 font-bold tracking-widest uppercase text-[10px]">
+                                        <span className="text-sm">👥</span> Felhasználók Kezelése
+                                    </Link>
+                                )}
                             </div>
                         </div>
                     </div>
@@ -247,7 +275,9 @@ export default function DashboardPage() {
             <div className="mb-8 glass-panel p-6 rounded-2xl glow-border flex flex-col sm:flex-row justify-between items-end gap-6">
                 <div className="flex flex-col w-full sm:w-auto">
                     <h2 className="text-xl font-bold mb-4 text-white uppercase tracking-wider">
-                        {activeTab === 'organized' ? 'Saját Eseményeim' : 'Részvételeim'}
+                        {activeTab === 'organized'
+                            ? (hasPermission('edit_any_event') ? 'Rendszer Eseményei (Admin)' : 'Saját Eseményeim')
+                            : 'Részvételeim'}
                     </h2>
 
                     <div className="flex flex-wrap gap-4 items-center">

@@ -4,12 +4,25 @@
 import { Auth } from '@supabase/auth-ui-react'
 import { ThemeSupa } from '@supabase/auth-ui-shared'
 import { supabase } from '../../lib/supabase'
-import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useEffect, useState, Suspense } from 'react';
 
-export default function AuthPage() {
+function AuthForm() {
     const router = useRouter();
+    const searchParams = useSearchParams();
     const [session, setSession] = useState<any>(null);
+
+    const redirectPath = searchParams.get('redirect');
+    const actionParam = searchParams.get('action');
+
+    const getFinalRedirectPath = () => {
+        if (redirectPath && actionParam) {
+            return `${redirectPath}?action=${actionParam}`;
+        } else if (redirectPath) {
+            return redirectPath;
+        }
+        return '/';
+    };
 
     useEffect(() => {
         // Figyeli a session változásait
@@ -17,7 +30,7 @@ export default function AuthPage() {
             async (event, session) => {
                 setSession(session);
                 if (session) {
-                    router.push('/');
+                    router.push(getFinalRedirectPath());
                 }
             }
         );
@@ -26,8 +39,7 @@ export default function AuthPage() {
         supabase.auth.getSession().then(({ data: { session } }) => {
             setSession(session);
             if (session) {
-                // ITT VOLT A MÁSIK '/', EZT IS ÁTÍRTUK:
-                router.push('/');
+                router.push(getFinalRedirectPath());
             }
         });
 
@@ -160,4 +172,12 @@ export default function AuthPage() {
             </div>
         </main>
     )
+}
+
+export default function AuthPage() {
+    return (
+        <Suspense fallback={<div className="min-h-screen bg-black flex items-center justify-center text-white glow-text">Betöltés...</div>}>
+            <AuthForm />
+        </Suspense>
+    );
 }

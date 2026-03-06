@@ -6,9 +6,11 @@ import AttendeesList from './AttendeesList';
 
 export const revalidate = 0;
 
-export default async function PublicEventPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function PublicEventPage({ params, searchParams }: { params: Promise<{ id: string }>, searchParams: Promise<{ [key: string]: string | string[] | undefined }> }) {
     // 1. Paraméterek feloldása Next 15 szerint
     const resolvedParams = await params;
+    const resolvedSearchParams = await searchParams;
+    const isAutoJoin = resolvedSearchParams.action === 'join';
 
     // 2. Esemény adatainak lekérdezése
     const { data: event, error } = await supabase

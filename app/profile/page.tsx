@@ -43,16 +43,35 @@ export default function ProfilePage() {
 
         let finalAvatarUrl = avatarUrl;
 
-        // Ha van új profilkép
+        // Ha van új profilkép - retry logikával a hálózati hibák kezelésére
         if (avatarFile) {
             const fileName = `${user.id}-${Date.now()}`;
-            const { error: uploadError } = await supabase.storage
-                .from('avatars')
-                .upload(fileName, avatarFile, { upsert: true });
+            let uploadSuccess = false;
+            let lastError: any = null;
 
-            if (uploadError) {
-                console.error('Kép feltöltési hiba:', uploadError);
-                alert('Hiba történt a profilkép feltöltésekor.');
+            // Max 3 próbálkozás
+            for (let attempt = 1; attempt <= 3; attempt++) {
+                const { error: uploadError } = await supabase.storage
+                    .from('avatars')
+                    .upload(fileName, avatarFile, { upsert: true });
+
+                if (!uploadError) {
+                    uploadSuccess = true;
+                    break;
+                }
+
+                lastError = uploadError;
+                console.warn(`Kép feltöltés ${attempt}. próba sikertelen:`, uploadError.message);
+
+                if (attempt < 3) {
+                    // Várjunk egy kicsit a következő próba előtt (exponent. backoff)
+                    await new Promise(r => setTimeout(r, attempt * 500));
+                }
+            }
+
+            if (!uploadSuccess) {
+                console.error('Kép feltöltési hiba (3 próba után):', lastError);
+                alert('Hiba történt a profilkép feltöltésekor. Kérjük próbáld újra!');
                 setSaving(false);
                 return;
             }

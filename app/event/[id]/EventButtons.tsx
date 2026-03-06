@@ -2,8 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
+import { useRouter } from 'next/navigation';
 
-export default function EventButtons({ eventId }: { eventId: string }) {
+export default function EventButtons({ eventId, autoJoin = false }: { eventId: string, autoJoin?: boolean }) {
+    const router = useRouter();
     const [copied, setCopied] = useState(false);
     const [userId, setUserId] = useState<string | null>(null);
     const [isAttending, setIsAttending] = useState<boolean>(false);
@@ -24,12 +26,28 @@ export default function EventButtons({ eventId }: { eventId: string }) {
 
                 if (data && !error) {
                     setIsAttending(true);
+                } else if (autoJoin) {
+                    // Automatikus csatlakozás vendég redirect után
+                    await handleAutoJoin(user.id);
                 }
             }
             setLoading(false);
         };
         checkStatus();
-    }, [eventId]);
+    }, [eventId, autoJoin]);
+
+    const handleAutoJoin = async (uid: string) => {
+        const { error } = await supabase
+            .from('event_attendees')
+            .insert([{ event_id: eventId, user_id: uid }]);
+
+        if (!error) {
+            setIsAttending(true);
+            alert("Sikeresen jelentkeztél az eseményre a bejelentkezés után!");
+            // URL megtisztítása az action paramétertől, hogy refreshre ne fusson le újra
+            router.replace(`/event/${eventId}`);
+        }
+    };
 
     const handleCopy = () => {
         navigator.clipboard.writeText(window.location.href);
@@ -41,7 +59,9 @@ export default function EventButtons({ eventId }: { eventId: string }) {
         const { data: { user } } = await supabase.auth.getUser();
 
         if (!user) {
-            alert("Kérlek, jelentkezz be a részvétel jelzéséhez!");
+            if (confirm("Kérjük, a jelentkezéshez jelentkezz be vagy regisztrálj! Átirányíthatlak a bejelentkezéshez?")) {
+                router.push(`/login?redirect=/event/${eventId}&action=join`);
+            }
             return;
         }
 

@@ -4,16 +4,26 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
+import { usePermissions } from '@/app/hooks/usePermissions';
 
 export default function CategoriesPage() {
     const router = useRouter();
+    const { loading: permsLoading, permissions: userPermissions } = usePermissions();
     const [categories, setCategories] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [newCategoryName, setNewCategoryName] = useState('');
 
     useEffect(() => {
+        if (permsLoading) return;
+
+        const canManage = userPermissions.some((p: any) => p.action === 'manage_categories');
+        if (!canManage) {
+            router.push('/dashboard');
+            return;
+        }
         fetchCategories();
-    }, []);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [permsLoading, userPermissions, router]);
 
     const fetchCategories = async () => {
         setLoading(true);
@@ -79,6 +89,15 @@ export default function CategoriesPage() {
         }
     };
 
+    if (permsLoading || loading) {
+        return <div className="p-8 text-center text-gray-500 glow-text min-h-screen flex items-center justify-center">Kategóriák betöltése...</div>;
+    }
+
+    const canManageCategories = userPermissions.some((p: any) => p.action === 'manage_categories');
+    if (!canManageCategories) {
+        return null;
+    }
+
     return (
         <div className="p-8 max-w-4xl mx-auto min-h-screen text-white">
             <div className="flex flex-col mb-10 gap-4">
@@ -133,8 +152,8 @@ export default function CategoriesPage() {
                                         <button
                                             onClick={() => handleToggleActive(cat.id, cat.is_active)}
                                             className={`px-3 py-1.5 rounded-full text-[9px] uppercase tracking-widest font-bold transition-all shadow-sm ${cat.is_active
-                                                    ? 'bg-brand-blue/20 text-brand-blue border border-brand-blue/50 hover:bg-brand-blue/30'
-                                                    : 'bg-gray-800 text-gray-500 border border-gray-600 hover:text-gray-300'
+                                                ? 'bg-brand-blue/20 text-brand-blue border border-brand-blue/50 hover:bg-brand-blue/30'
+                                                : 'bg-gray-800 text-gray-500 border border-gray-600 hover:text-gray-300'
                                                 }`}
                                         >
                                             {cat.is_active ? 'Aktiválva' : 'Inaktiválva'}
