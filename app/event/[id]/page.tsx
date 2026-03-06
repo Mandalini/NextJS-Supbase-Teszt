@@ -25,7 +25,7 @@ export default async function PublicEventPage({ params }: { params: Promise<{ id
     return (
         <div className="min-h-screen flex flex-col items-center bg-[var(--color-background)] text-gray-300">
             {/* Fejléc */}
-            <header className="w-full glass-panel border-b border-white/10 sticky top-0 z-50">
+            <header className="w-full glass-panel border-b border-white/10 relative z-50">
                 <div className="max-w-4xl mx-auto px-6 py-4 flex justify-between items-center">
                     <Link href="/" className="flex items-center gap-3 group">
                         <div className="text-xl font-light tracking-[0.2em] text-white group-hover:text-brand-blue transition-colors">

@@ -6,6 +6,7 @@ import { supabase } from '@/lib/supabase';
 
 // React (uses), hogy kibontsuk a params Promise-t Next 15 szerint:
 import { use } from 'react';
+import { CustomDateInput, CustomCategorySelect } from '@/app/components/FormControls';
 
 export default function EditEventPage() {
     const router = useRouter();
@@ -15,12 +16,22 @@ export default function EditEventPage() {
     const [fetching, setFetching] = useState(true);
     const [imageFile, setImageFile] = useState<File | null>(null);
     const [existingImage, setExistingImage] = useState<string | null>(null);
+    const [categories, setCategories] = useState<any[]>([]);
+
+    useEffect(() => {
+        const fetchCategories = async () => {
+            const { data } = await supabase.from('categories').select('*').eq('is_active', true).order('name');
+            if (data) setCategories(data);
+        };
+        fetchCategories();
+    }, []);
 
     const [formData, setFormData] = useState({
         title: '',
         date: '',
         location: '',
         description: '',
+        category: 'Egyéb',
         is_public: false,
     });
 
@@ -46,6 +57,7 @@ export default function EditEventPage() {
                     date: data.date ? data.date.split('T')[0] : '',
                     location: data.location || '',
                     description: data.description || '',
+                    category: data.category || 'Egyéb',
                     is_public: data.is_public || false,
                 });
             }
@@ -98,6 +110,7 @@ export default function EditEventPage() {
                 date: formData.date,
                 location: formData.location,
                 description: formData.description,
+                category: formData.category,
                 is_public: formData.is_public,
                 image_url: final_image_url
             })
@@ -134,14 +147,11 @@ export default function EditEventPage() {
                     />
                 </div>
 
-                <div>
+                <div className="relative">
                     <label className="block text-xs uppercase tracking-widest text-gray-400 mb-2 font-bold">Dátum *</label>
-                    <input
-                        type="date"
-                        required
-                        className="w-full bg-black/40 border border-white/20 rounded-xl p-3 text-white focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold transition-colors"
+                    <CustomDateInput
                         value={formData.date}
-                        onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                        onChange={(val) => setFormData({ ...formData, date: val })}
                     />
                 </div>
 
@@ -152,6 +162,15 @@ export default function EditEventPage() {
                         className="w-full bg-black/40 border border-white/20 rounded-xl p-3 text-white focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold transition-colors"
                         value={formData.location}
                         onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                    />
+                </div>
+
+                <div className="relative z-40">
+                    <label className="block text-xs uppercase tracking-widest text-gray-400 mb-2 font-bold">Kategória</label>
+                    <CustomCategorySelect
+                        value={formData.category}
+                        onChange={(val) => setFormData({ ...formData, category: val })}
+                        categories={categories}
                     />
                 </div>
 

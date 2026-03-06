@@ -2,6 +2,7 @@
 import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
 import HeaderActions from './components/HeaderActions';
+import HomeEventList from './components/HomeEventList';
 
 // Ezzel jelezzük a Next.js-nek, hogy ne cache-elje statikusan a lekérdezést, 
 // hanem minden letöltéskor frissítse, hogy az új események is ott legyenek.
@@ -19,12 +20,23 @@ export default async function Home() {
         console.error('Hiba a publikus események betöltésekor:', error);
     }
 
+    const { data: catData, error: catError } = await supabase
+        .from('categories')
+        .select('*')
+        .eq('is_active', true)
+        .order('name', { ascending: true });
+
+    if (catError) {
+        console.error('Hiba a kategóriák betöltésekor:', catError);
+    }
+
     const publicEvents = events || [];
+    const categories = catData || [];
 
     return (
         <div className="min-h-screen flex flex-col items-center">
             {/* Fejléc - REZGÉSKAPU stílusban */}
-            <header className="w-full glass-panel border-b border-white/10 sticky top-0 z-50">
+            <header className="w-full glass-panel border-b border-white/10 relative z-50">
                 <div className="max-w-6xl mx-auto px-6 py-5 flex justify-between items-center">
                     <div className="flex items-center gap-3">
                         <div className="text-3xl font-light tracking-[0.2em] text-white">
@@ -55,60 +67,7 @@ export default async function Home() {
                 </div>
 
                 {publicEvents.length > 0 ? (
-                    <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3 relative z-10">
-                        {publicEvents.map((event) => (
-                            <Link
-                                href={`/event/${event.id}`}
-                                key={event.id}
-                                className="glass-panel rounded-xl overflow-hidden hover:-translate-y-2 transition-transform duration-300 glow-border group flex flex-col cursor-pointer"
-                            >
-                                {event.image_url && (
-                                    <div className="w-full h-48 overflow-hidden relative border-b border-white/10 shrink-0">
-                                        <img src={event.image_url} alt={event.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
-                                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent"></div>
-                                    </div>
-                                )}
-                                <div className="p-8 flex-grow flex flex-col justify-between">
-                                    <div>
-                                        <div className="flex items-center gap-3 mb-4">
-                                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-brand-blue to-brand-purple flex items-center justify-center shadow-[0_0_15px_var(--color-brand-blue)] shrink-0">
-                                                <span className="text-white text-xs font-bold">
-                                                    {new Date(event.date).getDate()}
-                                                </span>
-                                            </div>
-                                            <div className="uppercase tracking-widest text-[10px] text-gray-400 font-semibold">
-                                                {new Date(event.date).toLocaleDateString('hu-HU', {
-                                                    year: 'numeric', month: 'long'
-                                                })}
-                                            </div>
-                                        </div>
-
-                                        <h3 className="block mt-1 text-2xl font-bold text-white mb-3 group-hover:text-gold transition-colors">
-                                            {event.title}
-                                        </h3>
-
-                                        {event.location && (
-                                            <p className="text-gray-400 text-sm mb-4 flex items-center gap-2 font-mono">
-                                                <span className="text-gold">📍</span> {event.location}
-                                            </p>
-                                        )}
-
-                                        {event.description && (
-                                            <p className="mt-4 text-gray-300 line-clamp-3 leading-relaxed font-light mb-6">
-                                                {event.description}
-                                            </p>
-                                        )}
-
-                                        <div className="mt-auto flex justify-end">
-                                            <span className="text-gold text-[10px] uppercase tracking-widest font-bold group-hover:translate-x-2 transition-transform duration-300 flex items-center gap-2">
-                                                Részt veszek <span>&rarr;</span>
-                                            </span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </Link>
-                        ))}
-                    </div>
+                    <HomeEventList initialEvents={publicEvents} categories={categories} />
                 ) : (
                     <div className="text-center py-24 glass-panel rounded-2xl glow-border relative z-10">
                         <span className="text-6xl mb-6 block text-white opacity-20">(( • ))</span>
