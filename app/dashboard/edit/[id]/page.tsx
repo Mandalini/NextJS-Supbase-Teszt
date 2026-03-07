@@ -49,6 +49,10 @@ export default function EditEventPage() {
         category: 'Egyéb',
         is_public: false,
         status: 'draft',
+        owner_name: '',
+        modifier_name: '',
+        updated_at: '',
+        created_at: '',
     });
 
     useEffect(() => {
@@ -58,12 +62,12 @@ export default function EditEventPage() {
 
             const { data, error } = await supabase
                 .from('events')
-                .select('*')
+                .select('*, owner:profiles!events_user_id_fkey(display_name), modifier:profiles!events_updated_by_fkey(display_name)')
                 .eq('id', id)
                 .single();
 
             if (error || !data) {
-                console.error("Hiba az esemény betöltésekor:", error);
+                console.error("Hiba az esemény betöltésekor:", JSON.stringify(error));
                 alert("Nem sikerült betölteni az eseményt.");
                 router.push('/dashboard');
             } else {
@@ -76,6 +80,10 @@ export default function EditEventPage() {
                     category: data.category || 'Egyéb',
                     is_public: data.is_public || false,
                     status: data.status || 'draft',
+                    owner_name: data.owner?.display_name || 'Ismeretlen',
+                    modifier_name: data.modifier?.display_name || 'Sosem módosítva',
+                    updated_at: data.updated_at || '',
+                    created_at: data.created_at || '',
                 });
             }
             setFetching(false);
@@ -120,18 +128,23 @@ export default function EditEventPage() {
         }
 
         // Adat frissítése a Supabase-ben
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        const updateData = {
+            ...formData,
+            image_url: final_image_url,
+            is_public: formData.status === 'published',
+            updated_at: new Date().toISOString(),
+            updated_by: user.id
+        };
+
+        // Remove UI-only fields from database update
+        const { owner_name, modifier_name, created_at, ...dbData } = updateData;
+
         const { error } = await supabase
             .from('events')
-            .update({
-                title: formData.title,
-                date: formData.date,
-                location: formData.location,
-                description: formData.description,
-                category: formData.category,
-                is_public: formData.status === 'published',
-                status: formData.status,
-                image_url: final_image_url
-            })
+            .update(dbData)
             .eq('id', id);
 
         setLoading(false);
@@ -248,6 +261,25 @@ export default function EditEventPage() {
                     {imageFile && <p className="text-xs text-gold mt-2">Új kép kiválasztva cserére: {imageFile.name}</p>}
                 </div>
 
+                <div className="bg-black/40 border border-white/10 rounded-xl p-6 flex flex-col gap-4 text-xs font-mono tracking-widest uppercase">
+                    <div className="flex justify-between items-center border-b border-white/5 pb-2">
+                        <span className="text-gray-500">Létrehozó:</span>
+                        <span className="text-brand-blue font-bold">{formData.owner_name}</span>
+                    </div>
+                    <div className="flex justify-between items-center border-b border-white/5 pb-2">
+                        <span className="text-gray-500">Létrehozva:</span>
+                        <span className="text-white">{formData.created_at ? new Date(formData.created_at).toLocaleString('hu-HU') : '-'}</span>
+                    </div>
+                    <div className="flex justify-between items-center border-b border-white/5 pb-2">
+                        <span className="text-gray-500">Utolsó módosító:</span>
+                        <span className="text-gold font-bold">{formData.modifier_name}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                        <span className="text-gray-500">Utolsó módosítás:</span>
+                        <span className="text-white">{formData.updated_at ? new Date(formData.updated_at).toLocaleString('hu-HU') : '-'}</span>
+                    </div>
+                </div>
+
                 <div className="pt-8 flex flex-col sm:flex-row gap-4">
                     <button
                         type="submit"
@@ -264,7 +296,7 @@ export default function EditEventPage() {
                         Mégse
                     </button>
                 </div>
-            </form>
-        </div>
+            </form >
+        </div >
     );
 }

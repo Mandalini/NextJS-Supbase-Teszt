@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 
 import Link from 'next/link';
@@ -10,7 +10,7 @@ import { usePermissions } from '@/app/hooks/usePermissions';
 
 export default function DashboardPage() {
     const router = useRouter();
-    const { hasPermission, permissions, loading: permsLoading } = usePermissions();
+    const { hasPermission, hasRole, permissions, loading: permsLoading } = usePermissions();
     const [user, setUser] = useState<any>(null);
     const [events, setEvents] = useState<any[]>([]);
     const [attendedEvents, setAttendedEvents] = useState<any[]>([]);
@@ -30,9 +30,22 @@ export default function DashboardPage() {
     const [startDate, setStartDate] = useState(() => typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('startDate') || '' : '');
     const [endDate, setEndDate] = useState(() => typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('endDate') || '' : '');
     const [statusFilter, setStatusFilter] = useState(() => typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('statusFilter') || '' : '');
+    const [organizerFilter, setOrganizerFilter] = useState(() => typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('organizerFilter') || '' : '');
+    const [organizers, setOrganizers] = useState<any[]>([]);
 
     // Nézet állapota ('grid' vagy 'table')
     const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
+
+    // Rendezési állapot
+    const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' } | null>({ key: 'date', direction: 'asc' });
+
+    const requestSort = (key: string) => {
+        let direction: 'asc' | 'desc' = 'asc';
+        if (sortConfig && sortConfig.key === key && sortConfig.direction === 'asc') {
+            direction = 'desc';
+        }
+        setSortConfig({ key, direction });
+    };
 
     // Inicializáljuk a nézetet a localStorage-ból, ha van
     useEffect(() => {
@@ -52,7 +65,8 @@ export default function DashboardPage() {
         sessionStorage.setItem('startDate', startDate);
         sessionStorage.setItem('endDate', endDate);
         sessionStorage.setItem('statusFilter', statusFilter);
-    }, [searchQuery, startDate, endDate, statusFilter]);
+        sessionStorage.setItem('organizerFilter', organizerFilter);
+    }, [searchQuery, startDate, endDate, statusFilter, organizerFilter]);
 
     const handleSignOut = async () => {
         await supabase.auth.signOut();
@@ -143,23 +157,33 @@ export default function DashboardPage() {
             setUser(user);
 
             // Fetch organized events
-            // A permissions tömb itt STABIL referencia, nem okoz újraalapítást
             const canEditAll = permissions.some(p => p.action === 'edit_any_event');
 
             let query = supabase
                 .from('events')
-                .select('*, event_attendees(count)')
+                .select('*, event_attendees(count), owner:profiles!events_user_id_fkey(display_name)')
                 .order('date', { ascending: true });
 
-            // Ha nincs 'edit_any_event' joga, akkor csak a sajátjait lássa a "Saját Eseményeim" alatt
             if (!canEditAll) {
-                query = query.eq('created_by', user.id);
+                query = query.eq('user_id', user.id);
             }
 
             const { data: orgData, error: orgError } = await query;
 
-            if (orgError) console.error('Hiba az események lekérdezésekor:', orgError);
-            else setEvents(orgData || []);
+            if (orgError) {
+                console.error('Hiba az események lekérdezésekor:', JSON.stringify(orgError));
+            } else {
+                setEvents(orgData || []);
+            }
+
+            // Fetch organizers list for admin filter
+            if (canEditAll) {
+                const { data: profs } = await supabase
+                    .from('profiles')
+                    .select('id, display_name')
+                    .order('display_name');
+                if (profs) setOrganizers(profs);
+            }
 
             // Fetch attended events
             const { data: attData, error: attError } = await supabase
@@ -181,7 +205,6 @@ export default function DashboardPage() {
 
         fetchData();
         // permissions tömb változásakor fut le (csak egyszer, miután a hook betöltött).
-        // A hasPermission függvény NEM kerül ide, mert minden renderben új referenciát kap.
     }, [permsLoading, permissions, router]);
 
     const handleDuplicate = async (eventToCopy: any) => {
@@ -217,22 +240,47 @@ export default function DashboardPage() {
         }
     };
 
+    const currentDataList = activeTab === 'organized' ? events : attendedEvents;
+
+    const filteredEvents = useMemo(() => {
+        let items = currentDataList.filter((event) => {
+            if (!event) return false;
+            const matchesSearch = event.title?.toLowerCase().includes(searchQuery.toLowerCase());
+            const eventDate = new Date(event.date).getTime();
+            const matchesStartDate = startDate ? eventDate >= new Date(startDate).getTime() : true;
+            const matchesEndDate = endDate ? eventDate <= new Date(endDate).getTime() + 86400000 : true;
+            const matchesStatus = statusFilter ? event.status === statusFilter : true;
+            const matchesOrganizer = organizerFilter ? event.user_id === organizerFilter : true;
+
+            return matchesSearch && matchesStartDate && matchesEndDate && matchesStatus && matchesOrganizer;
+        });
+
+        if (sortConfig !== null) {
+            items.sort((a, b) => {
+                let aValue: any = a[sortConfig.key];
+                let bValue: any = b[sortConfig.key];
+
+                // Speciális esetek pl. nested objects
+                if (sortConfig.key === 'owner') {
+                    aValue = a.owner?.display_name || '';
+                    bValue = b.owner?.display_name || '';
+                }
+
+                if (aValue < bValue) {
+                    return sortConfig.direction === 'asc' ? -1 : 1;
+                }
+                if (aValue > bValue) {
+                    return sortConfig.direction === 'asc' ? 1 : -1;
+                }
+                return 0;
+            });
+        }
+        return items;
+    }, [currentDataList, searchQuery, startDate, endDate, statusFilter, organizerFilter, sortConfig]);
+
     if (loading) {
         return <div className="p-8 text-center text-gray-500 glow-text">Adatok betöltése...</div>;
     }
-
-    const currentDataList = activeTab === 'organized' ? events : attendedEvents;
-
-    const filteredEvents = currentDataList.filter((event) => {
-        if (!event) return false;
-        const matchesSearch = event.title?.toLowerCase().includes(searchQuery.toLowerCase());
-        const eventDate = new Date(event.date).getTime();
-        const matchesStartDate = startDate ? eventDate >= new Date(startDate).getTime() : true;
-        const matchesEndDate = endDate ? eventDate <= new Date(endDate).getTime() + 86400000 : true;
-        const matchesStatus = statusFilter ? event.status === statusFilter : true;
-
-        return matchesSearch && matchesStartDate && matchesEndDate && matchesStatus;
-    });
 
     return (
         <div className="p-8 max-w-6xl mx-auto min-h-screen text-white relative">
@@ -302,7 +350,7 @@ export default function DashboardPage() {
                         : 'bg-black/40 text-gray-400 hover:text-white border border-white/10'
                         }`}
                 >
-                    Organizált Eseményeim
+                    {hasPermission('edit_any_event') ? (hasRole('Admin') ? 'Minden Esemény (Admin)' : 'Minden Esemény') : 'Saját Eseményeim'}
                 </button>
                 <button
                     onClick={() => setActiveTab('attended')}
@@ -317,12 +365,6 @@ export default function DashboardPage() {
 
             <div className="mb-8 glass-panel p-6 rounded-2xl glow-border flex flex-col sm:flex-row justify-between items-end gap-6">
                 <div className="flex flex-col w-full sm:w-auto">
-                    <h2 className="text-xl font-bold mb-4 text-white uppercase tracking-wider">
-                        {activeTab === 'organized'
-                            ? (hasPermission('edit_any_event') ? 'Rendszer Eseményei (Admin)' : 'Saját Eseményeim')
-                            : 'Részvételeim'}
-                    </h2>
-
                     <div className="flex flex-wrap gap-3 sm:gap-4 items-end">
                         <div className="flex-1 min-w-[140px] max-w-[200px]">
                             <label className="block text-[10px] uppercase tracking-widest text-brand-blue mb-1 font-bold">Keresés</label>
@@ -363,10 +405,33 @@ export default function DashboardPage() {
                                 </select>
                             </div>
                         )}
+                        {activeTab === 'organized' && hasPermission('edit_any_event') && (
+                            <div className="w-[140px] sm:w-[160px]">
+                                <label className="block text-[10px] uppercase tracking-widest text-brand-blue mb-1 font-bold">Szervező szerint</label>
+                                <select
+                                    className="bg-black/40 border border-white/20 rounded-xl p-3 text-white focus:outline-none focus:border-gold w-full text-xs transition-colors appearance-none tracking-widest font-mono"
+                                    value={organizerFilter}
+                                    onChange={(e) => setOrganizerFilter(e.target.value)}
+                                >
+                                    <option value="" className="bg-gray-900 text-gray-300">Minden szervező</option>
+                                    {organizers.map(org => (
+                                        <option key={org.id} value={org.id} className="bg-gray-900 text-white">
+                                            {org.display_name || 'Névtelen'}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                        )}
                         <div className="mb-[2px]">
-                            {(searchQuery || startDate || endDate || statusFilter) && (
+                            {(searchQuery || startDate || endDate || statusFilter || organizerFilter) && (
                                 <button
-                                    onClick={() => { setSearchQuery(''); setStartDate(''); setEndDate(''); setStatusFilter(''); }}
+                                    onClick={() => {
+                                        setSearchQuery('');
+                                        setStartDate('');
+                                        setEndDate('');
+                                        setStatusFilter('');
+                                        setOrganizerFilter('');
+                                    }}
                                     className="text-[10px] px-3 py-2 border border-white/10 rounded-lg text-gold hover:text-white hover:border-gold tracking-widest uppercase transition-colors whitespace-nowrap bg-black/40"
                                 >
                                     Törlés
@@ -441,9 +506,14 @@ export default function DashboardPage() {
                                                 )
                                             )}
                                         </div>
-                                        <p className="text-gray-400 text-xs font-mono uppercase tracking-widest mb-2 border-b border-white/10 pb-2 inline-block">
-                                            {new Date(event.date).toLocaleDateString('hu-HU')}
-                                        </p>
+                                        <div className="flex flex-wrap items-center justify-between gap-1 mb-2 border-b border-white/10 pb-2">
+                                            <p className="text-gray-400 text-[10px] font-mono uppercase tracking-widest ">
+                                                {new Date(event.date).toLocaleDateString('hu-HU')}
+                                            </p>
+                                            <p className="text-brand-blue text-[9px] font-bold uppercase tracking-[0.2em]">
+                                                👤 {event.owner?.display_name || 'Ismeretlen'}
+                                            </p>
+                                        </div>
                                         <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
                                             {event.location && (
                                                 <p className="text-gold text-sm font-mono flex-1">📍 <span className="text-gray-300">{event.location}</span></p>
@@ -510,43 +580,82 @@ export default function DashboardPage() {
                     {/* TÁBLÁZATOS NÉZET */}
                     {viewMode === 'table' && (
                         <div className="overflow-x-auto glass-panel rounded-xl glow-border">
-                            <table className="min-w-full divide-y divide-white/10 text-sm">
+                            <table className="min-w-full divide-y divide-white/10 text-sm table-fixed">
                                 <thead className="bg-black/20">
                                     <tr>
-                                        <th className="px-6 py-4 text-left font-bold text-brand-blue uppercase tracking-widest text-[10px]">Cím</th>
-                                        <th className="px-6 py-4 text-left font-bold text-brand-blue uppercase tracking-widest text-[10px]">Dátum</th>
-                                        <th className="px-6 py-4 text-left font-bold text-brand-blue uppercase tracking-widest text-[10px]">Kategória</th>
-                                        <th className="px-6 py-4 text-left font-bold text-brand-blue uppercase tracking-widest text-[10px]">Helyszín</th>
+                                        <th
+                                            onClick={() => requestSort('title')}
+                                            className="w-[30%] px-2 py-5 text-left font-bold text-brand-blue uppercase tracking-widest text-[10px] cursor-pointer hover:bg-white/5 transition-colors group"
+                                        >
+                                            <div className="flex items-center">
+                                                Cím {sortConfig?.key === 'title' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : <span className="opacity-0 group-hover:opacity-40 ml-1">↕</span>}
+                                            </div>
+                                        </th>
+                                        <th
+                                            onClick={() => requestSort('owner')}
+                                            className="w-[12%] px-2 py-5 text-left font-bold text-brand-blue uppercase tracking-widest text-[10px] cursor-pointer hover:bg-white/5 transition-colors group"
+                                        >
+                                            <div className="flex items-center">
+                                                Szervező {sortConfig?.key === 'owner' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : <span className="opacity-0 group-hover:opacity-40 ml-1">↕</span>}
+                                            </div>
+                                        </th>
+                                        <th
+                                            onClick={() => requestSort('date')}
+                                            className="w-[10%] px-2 py-5 text-left font-bold text-brand-blue uppercase tracking-widest text-[10px] cursor-pointer hover:bg-white/5 transition-colors group"
+                                        >
+                                            <div className="flex items-center">
+                                                Dátum {sortConfig?.key === 'date' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : <span className="opacity-0 group-hover:opacity-40 ml-1">↕</span>}
+                                            </div>
+                                        </th>
+                                        <th
+                                            onClick={() => requestSort('category')}
+                                            className="w-[10%] px-2 py-4 text-left font-bold text-brand-blue uppercase tracking-widest text-[10px] cursor-pointer hover:bg-white/5 transition-colors group"
+                                        >
+                                            <div className="flex items-center">
+                                                Kategória {sortConfig?.key === 'category' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : <span className="opacity-0 group-hover:opacity-40 ml-1">↕</span>}
+                                            </div>
+                                        </th>
+                                        <th
+                                            onClick={() => requestSort('location')}
+                                            className="w-[10%] px-2 py-4 text-left font-bold text-brand-blue uppercase tracking-widest text-[10px] cursor-pointer hover:bg-white/5 transition-colors group"
+                                        >
+                                            <div className="flex items-center">
+                                                Helyszín {sortConfig?.key === 'location' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : <span className="opacity-0 group-hover:opacity-40 ml-1">↕</span>}
+                                            </div>
+                                        </th>
                                         {activeTab === 'organized' && (
                                             <>
-                                                <th className="px-6 py-4 text-center font-bold text-brand-blue uppercase tracking-widest text-[10px]">Résztvevők</th>
-                                                <th className="px-6 py-4 text-center font-bold text-brand-blue uppercase tracking-widest text-[10px]">Státusz</th>
+                                                <th className="w-[7%] px-2 py-4 text-center font-bold text-brand-blue uppercase tracking-widest text-[10px]">Résztvevők</th>
+                                                <th className="w-[9%] px-2 py-4 text-center font-bold text-brand-blue uppercase tracking-widest text-[10px]">Státusz</th>
                                             </>
                                         )}
-                                        <th className="px-6 py-4 text-right font-bold text-brand-blue uppercase tracking-widest text-[10px]">Műveletek</th>
+                                        <th className="w-[12%] min-w-[120px] px-2 py-4 text-right font-bold text-brand-blue uppercase tracking-widest text-[10px]">Műveletek</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-white/5">
                                     {filteredEvents.map((event) => (
                                         <tr key={event.id} className="hover:bg-white/5 transition-colors">
-                                            <td className="px-6 py-4 font-bold text-white">
-                                                {event.status === 'published' ? (
-                                                    <Link href={`/event/${event.id}`} className="hover:text-gold transition-colors block">
+                                            <td className="px-2 py-4 font-bold text-white max-w-0">
+                                                {(event.status === 'published' && activeTab === 'attended') ? (
+                                                    <Link href={`/event/${event.id}`} className="hover:text-gold transition-colors block truncate pr-2">
                                                         {event.title}
                                                     </Link>
                                                 ) : (
-                                                    <Link href={`/dashboard/edit/${event.id}`} className="hover:text-gray-300 text-gray-500 transition-colors block">
+                                                    <Link href={`/dashboard/edit/${event.id}`} className="hover:text-gray-300 text-brand-blue transition-colors block truncate pr-2 decoration-brand-blue/30 hover:underline underline-offset-4">
                                                         {event.title}
                                                     </Link>
                                                 )}
                                             </td>
-                                            <td className="px-6 py-4 text-gray-400 whitespace-nowrap font-mono text-xs">{new Date(event.date).toLocaleDateString('hu-HU')}</td>
-                                            <td className="px-6 py-4 text-gray-400">{event.category || '-'}</td>
-                                            <td className="px-6 py-4 text-gray-400">{event.location || '-'}</td>
+                                            <td className="px-2 py-4 whitespace-nowrap max-w-0">
+                                                <div className="text-[11px] text-gray-300 font-bold uppercase tracking-wider truncate">{event.owner?.display_name || 'Ismeretlen'}</div>
+                                            </td>
+                                            <td className="px-2 py-4 text-gray-400 whitespace-nowrap font-mono text-[11px]">{new Date(event.date).toLocaleDateString('hu-HU')}</td>
+                                            <td className="px-2 py-4 text-gray-400 text-xs truncate">{event.category || '-'}</td>
+                                            <td className="px-2 py-4 text-gray-400 text-xs truncate">{event.location || '-'}</td>
 
                                             {activeTab === 'organized' && (
                                                 <>
-                                                    <td className="px-6 py-4 text-center font-bold text-brand-blue whitespace-nowrap">
+                                                    <td className="px-2 py-4 text-center font-bold text-brand-blue whitespace-nowrap text-xs">
                                                         <span
                                                             className="text-sm mr-1 cursor-pointer hover:text-white transition-colors"
                                                             onClick={() => openAttendeesModal(event.id, event.title)}
@@ -556,55 +665,71 @@ export default function DashboardPage() {
                                                         </span>
                                                         {event.event_attendees?.[0]?.count || 0}
                                                     </td>
-                                                    <td className="px-6 py-4 text-center">
+                                                    <td className="px-2 py-4 text-center">
                                                         {event.status === 'published' ? (
-                                                            <span className="bg-brand-blue/20 border border-brand-blue/50 text-brand-blue text-[10px] uppercase tracking-widest px-2 py-1 rounded-full font-bold shadow-[0_0_10px_var(--color-brand-blue)]">Publikált</span>
+                                                            <span className="bg-brand-blue/20 border border-brand-blue/50 text-brand-blue text-[9px] uppercase tracking-widest px-1.5 py-0.5 rounded-full font-bold shadow-[0_0_10px_var(--color-brand-blue)]">Publikált</span>
                                                         ) : event.status === 'cancelled' ? (
-                                                            <span className="bg-red-900/40 border border-red-600/50 text-red-400 text-[10px] uppercase tracking-widest px-2 py-1 rounded-full font-bold whitespace-nowrap shrink-0">Törölt</span>
+                                                            <span className="bg-red-900/40 border border-red-600/50 text-red-400 text-[9px] uppercase tracking-widest px-1.5 py-0.5 rounded-full font-bold whitespace-nowrap">Törölt</span>
                                                         ) : (
-                                                            <span className="bg-gray-800 border border-gray-600 text-gray-400 text-[10px] uppercase tracking-widest px-2 py-1 rounded-full font-bold">Piszkozat</span>
+                                                            <span className="bg-gray-800 border border-gray-600 text-gray-400 text-[9px] uppercase tracking-widest px-1.5 py-0.5 rounded-full font-bold">Piszkozat</span>
                                                         )}
                                                     </td>
                                                 </>
                                             )}
 
-                                            <td className="px-6 py-4 text-right whitespace-nowrap">
+                                            <td className="px-2 py-4 text-right whitespace-nowrap min-w-[120px]">
                                                 {activeTab === 'organized' ? (
-                                                    <>
+                                                    <div className="flex justify-end gap-2">
                                                         <Link
                                                             href={`/dashboard/edit/${event.id}`}
-                                                            className="text-gold hover:text-yellow-400 font-bold uppercase tracking-widest text-[10px] mr-4 transition-colors"
+                                                            title="Szerkesztés"
+                                                            className="p-2 bg-white/5 border border-white/10 rounded-lg text-gold hover:bg-gold hover:text-black transition-all group shadow-inner"
                                                         >
-                                                            Szerkeszt
+                                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                                            </svg>
                                                         </Link>
                                                         <button
                                                             onClick={() => handleDuplicate(event)}
-                                                            className="text-brand-purple hover:text-brand-purple/70 font-bold uppercase tracking-widest text-[10px] mr-4 transition-colors"
+                                                            title="Másolás"
+                                                            className="p-2 bg-white/5 border border-white/10 rounded-lg text-brand-purple hover:bg-brand-purple hover:text-white transition-all shadow-inner"
                                                         >
-                                                            Másol
+                                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2" />
+                                                            </svg>
                                                         </button>
                                                         <button
                                                             onClick={() => handleDelete(event.id)}
-                                                            className="text-red-400 hover:text-red-300 font-bold uppercase tracking-widest text-[10px] transition-colors"
+                                                            title="Törlés"
+                                                            className="p-2 bg-white/5 border border-white/10 rounded-lg text-red-400 hover:bg-red-500 hover:text-white transition-all shadow-inner"
                                                         >
-                                                            Töröl
+                                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                            </svg>
                                                         </button>
-                                                    </>
+                                                    </div>
                                                 ) : (
-                                                    <>
+                                                    <div className="flex justify-end gap-2">
                                                         <Link
                                                             href={`/event/${event.id}`}
-                                                            className="text-brand-blue hover:text-blue-300 font-bold uppercase tracking-widest text-[10px] mr-4 transition-colors"
+                                                            title="Megtekintés"
+                                                            className="p-2 bg-white/5 border border-white/10 rounded-lg text-brand-blue hover:bg-brand-blue hover:text-white transition-all shadow-inner"
                                                         >
-                                                            Megtekintés
+                                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                                            </svg>
                                                         </Link>
                                                         <button
                                                             onClick={() => handleCancelAttendance(event.id)}
-                                                            className="text-gray-400 hover:text-white font-bold uppercase tracking-widest text-[10px] transition-colors"
+                                                            title="Leiratkozás"
+                                                            className="p-2 bg-white/5 border border-white/10 rounded-lg text-gray-400 hover:bg-white/20 hover:text-white transition-all shadow-inner"
                                                         >
-                                                            Leiratkozás
+                                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                                                            </svg>
                                                         </button>
-                                                    </>
+                                                    </div>
                                                 )}
                                             </td>
                                         </tr>

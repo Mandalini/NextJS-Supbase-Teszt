@@ -32,13 +32,12 @@ export default async function OrganizerPage({ params }: { params: { id: string }
         );
     }
 
-    // 2. Szervező eseményeinek lekérdezése
-    // Megjegyzés: Jelenleg még nincs 'status' mezőnk (majd a Terv 3. részében csináljuk), 
-    // ezért egyelőre minden eseményét lekérjük.
+    // 2. Szervező eseményeinek lekérdezése (csak a publikáltak)
     const { data: events } = await supabase
         .from('events')
         .select('*')
-        .eq('created_by', params.id)
+        .eq('user_id', params.id)
+        .eq('status', 'published')
         .order('date', { ascending: true });
 
     return (

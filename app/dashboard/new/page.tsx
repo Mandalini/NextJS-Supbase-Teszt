@@ -92,7 +92,9 @@ export default function NewEventPage() {
                     is_public: formData.status === 'published',
                     status: formData.status,
                     user_id: user.id,
-                    image_url: image_url
+                    image_url: image_url,
+                    updated_at: new Date().toISOString(),
+                    updated_by: user.id
                 }
             ]);
 
