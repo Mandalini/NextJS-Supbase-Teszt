@@ -169,7 +169,7 @@ export default function HomeEventList({ initialEvents, categories }: { initialEv
 
                                             {event.description && (
                                                 <p className="mt-4 text-gray-300 line-clamp-3 leading-relaxed font-light mb-6">
-                                                    {event.description}
+                                                    {event.description.replace(/<[^>]+>/g, ' ')}
                                                 </p>
                                             )}
 

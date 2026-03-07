@@ -178,12 +178,12 @@ export default function RolesPage() {
         <div className="p-8 max-w-6xl mx-auto min-h-screen text-white">
             <div className="flex items-center justify-between mb-10 border-b border-white/10 pb-6">
                 <h1 className="text-4xl font-extralight tracking-wider">FELHASZNÁLÓK <span className="text-brand-blue font-bold glow-text">KEZELÉSE</span></h1>
-                <button
-                    onClick={() => router.push('/dashboard')}
-                    className="flex items-center gap-2 text-sm text-gray-400 hover:text-white transition-colors"
+                <Link
+                    href="/dashboard"
+                    className="px-5 py-2.5 glass-panel text-white hover:bg-white/10 rounded-xl transition-all glow-border text-[10px] uppercase tracking-widest font-bold flex items-center gap-2"
                 >
-                    &larr; Vissza a Vezérlőpultra
-                </button>
+                    <span>&larr;</span> Vissza a Vezérlőpultra
+                </Link>
             </div>
 
             {/* Tabok */}

@@ -128,7 +128,7 @@ export async function DELETE(req: NextRequest) {
 export async function PATCH(req: NextRequest) {
     try {
         const body = await req.json();
-        const { userIdToUpdate, requestingUserId, displayName, avatarUrl, theme } = body;
+        const { userIdToUpdate, requestingUserId, displayName, avatarUrl, theme, phone, website, facebook, instagram, slogan, introduction, isPublic } = body;
 
         // DEBUG - törölhető ha m\u0171k\u00f6dik
         console.log('[PATCH /api/admin/user] requestingUserId:', requestingUserId, '| userIdToUpdate:', userIdToUpdate);
@@ -160,10 +160,17 @@ export async function PATCH(req: NextRequest) {
             return NextResponse.json({ error: 'Nincs jogosultságod ehhez a művelethez.' }, { status: 403 });
         }
 
-        // Profiles tábla frissítése
+        // Profiles tábla frissítése (itt az összes új mezőt is mentjük service role-all, RLS megkerülve!)
         await supabaseAdmin.from('profiles').update({
             display_name: displayName,
             avatar_url: avatarUrl,
+            phone: phone,
+            website: website,
+            facebook: facebook,
+            instagram: instagram,
+            slogan: slogan,
+            introduction: introduction,
+            is_public: isPublic
         }).eq('id', userIdToUpdate);
 
         // Auth user_metadata frissítése (Admin nevében)

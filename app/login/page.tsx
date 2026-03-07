@@ -164,9 +164,9 @@ function AuthForm() {
                 <div className="mt-8 pt-6 border-t border-white/10 text-center">
                     <button
                         onClick={() => router.push('/')}
-                        className="text-gray-400 hover:text-white text-xs uppercase tracking-widest transition-colors"
+                        className="inline-flex items-center gap-2 px-5 py-2.5 glass-panel text-white hover:bg-white/10 rounded-xl transition-all glow-border text-[10px] uppercase tracking-widest font-bold"
                     >
-                        &larr; Vissza a kezdőlapra
+                        <span>&larr;</span> Vissza a kezdőlapra
                     </button>
                 </div>
             </div>

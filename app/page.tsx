@@ -13,7 +13,7 @@ export default async function Home() {
     const { data: events, error } = await supabase
         .from('events')
         .select('*')
-        .eq('is_public', true)
+        .eq('status', 'published') // Új szűrés a publikált státuszra
         .order('date', { ascending: true });
 
     if (error) {

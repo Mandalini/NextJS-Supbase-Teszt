@@ -2,8 +2,13 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
+import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { usePermissions } from '@/app/hooks/usePermissions';
+import dynamic from 'next/dynamic';
+import 'react-quill-new/dist/quill.snow.css';
+
+const ReactQuill = dynamic(() => import('react-quill-new'), { ssr: false });
 
 const THEMES = [
     { id: 'default', name: 'Alapértelmezett', color: '#3b82f6' },
@@ -26,6 +31,15 @@ export default function AdminEditProfilePage() {
     const [avatarUrl, setAvatarUrl] = useState('');
     const [selectedTheme, setSelectedTheme] = useState('default');
     const [avatarFile, setAvatarFile] = useState<File | null>(null);
+
+    // Új publikus profil mezők
+    const [phone, setPhone] = useState('');
+    const [website, setWebsite] = useState('');
+    const [facebook, setFacebook] = useState('');
+    const [instagram, setInstagram] = useState('');
+    const [slogan, setSlogan] = useState('');
+    const [introduction, setIntroduction] = useState('');
+    const [isPublic, setIsPublic] = useState(false);
 
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
@@ -52,7 +66,7 @@ export default function AdminEditProfilePage() {
         setLoading(true);
         const { data } = await supabase
             .from('profiles')
-            .select('id, email, display_name, avatar_url')
+            .select('*')
             .eq('id', userId)
             .single();
 
@@ -60,6 +74,13 @@ export default function AdminEditProfilePage() {
             setDisplayName(data.display_name || '');
             setEmail(data.email || '');
             setAvatarUrl(data.avatar_url || '');
+            setPhone(data.phone || '');
+            setWebsite(data.website || '');
+            setFacebook(data.facebook || '');
+            setInstagram(data.instagram || '');
+            setSlogan(data.slogan || '');
+            setIntroduction(data.introduction || '');
+            setIsPublic(data.is_public || false);
         }
 
         // Fetch theme from auth metadata
@@ -113,22 +134,8 @@ export default function AdminEditProfilePage() {
 
         const useAvatarUrl = finalAvatarUrl || avatarUrl;
 
-        // 1. Direkten frissítjük a profiles táblát (Admin RLS policy engedi)
-        const { error: profileError } = await supabase
-            .from('profiles')
-            .update({
-                display_name: displayName,
-                avatar_url: useAvatarUrl,
-            })
-            .eq('id', userId);
-
-        if (profileError) {
-            setMessage({ type: 'err', text: '❌ Profil frissítési hiba: ' + profileError.message });
-            setSaving(false);
-            return;
-        }
-
-        // 2. API Route hívása az auth.user_metadata (téma) frissítéséhez
+        // Mivel az API végpont most már mindent ment (RLS megkerülésével), rábízzuk arra a mentést!
+        // A kliens oldali supabase update elhagyható, így biztos nem lesz RLS hiba privát profiloknál.
         try {
             const res = await fetch('/api/admin/user', {
                 method: 'PATCH',
@@ -139,6 +146,13 @@ export default function AdminEditProfilePage() {
                     displayName,
                     avatarUrl: useAvatarUrl,
                     theme: selectedTheme,
+                    phone,
+                    website,
+                    facebook,
+                    instagram,
+                    slogan,
+                    introduction,
+                    isPublic
                 }),
             });
             const result = await res.json();
@@ -211,7 +225,12 @@ export default function AdminEditProfilePage() {
                     FELHASZNÁLÓ <span className="text-gold font-bold glow-text">SZERKESZTÉSE</span>
                     {isSelf && <span className="ml-3 text-[11px] font-bold uppercase tracking-widest bg-brand-blue/30 text-brand-blue border border-brand-blue/50 px-2 py-1 rounded-full align-middle">Saját fiókod</span>}
                 </h1>
-                <button onClick={() => router.push('/dashboard/roles')} className="text-sm text-gray-400 hover:text-white transition-colors">&larr; Vissza</button>
+                <Link
+                    href="/dashboard/roles"
+                    className="px-5 py-2.5 glass-panel text-white hover:bg-white/10 rounded-xl transition-all glow-border text-[10px] uppercase tracking-widest font-bold flex items-center gap-2"
+                >
+                    <span>&larr;</span> Vissza
+                </Link>
             </div>
 
             <div className="glass-panel p-8 rounded-2xl glow-border mb-6">
@@ -291,6 +310,78 @@ export default function AdminEditProfilePage() {
                             <input type="url" value={avatarUrl} onChange={e => setAvatarUrl(e.target.value)}
                                 className="w-full bg-black/40 border border-white/20 rounded-xl p-3 text-white focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold transition-colors font-mono text-sm"
                                 placeholder="https://..." />
+                        </div>
+                    </div>
+
+                    {/* --- SZERKESZTŐI PUBLIKUS PROFIL MEZŐK --- */}
+                    <div className="mt-8 border-t border-white/10 pt-8 flex flex-col gap-5">
+                        <h3 className="text-xl font-bold uppercase tracking-widest text-brand-purple mb-2">Publikus Profil Beállítások</h3>
+
+                        <div className="flex items-center bg-brand-purple/10 p-4 rounded-xl border border-brand-purple/30">
+                            <input
+                                type="checkbox"
+                                id="is_public"
+                                className="mr-3 w-5 h-5 accent-brand-purple rounded border-white/20 cursor-pointer"
+                                checked={isPublic}
+                                onChange={(e) => setIsPublic(e.target.checked)}
+                            />
+                            <div className="flex flex-col">
+                                <label htmlFor="is_public" className="text-sm font-bold text-white cursor-pointer select-none">
+                                    Profil publikussá tétele
+                                </label>
+                                <span className="text-xs text-brand-purple/80 tracking-wide mt-1">A bepipálással a felhasználó megjelenik a publikus Szervezők listájában és egyedi adatlapja lesz.</span>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label className="block text-[10px] uppercase tracking-widest text-brand-blue mb-2 font-bold">Telefonszám (Publikus)</label>
+                            <input type="tel" value={phone} onChange={e => setPhone(e.target.value)}
+                                className="w-full bg-black/40 border border-white/20 rounded-xl p-3 text-white focus:outline-none focus:border-brand-purple focus:ring-1 focus:ring-brand-purple transition-colors"
+                                placeholder="+36 30 123 4567" />
+                        </div>
+
+                        <div>
+                            <label className="block text-[10px] uppercase tracking-widest text-brand-blue mb-2 font-bold">Weboldal (Publikus)</label>
+                            <input type="url" value={website} onChange={e => setWebsite(e.target.value)}
+                                className="w-full bg-black/40 border border-white/20 rounded-xl p-3 text-white focus:outline-none focus:border-brand-purple focus:ring-1 focus:ring-brand-purple transition-colors"
+                                placeholder="https://www.sajatoldal.hu" />
+                        </div>
+
+                        <div className="flex gap-4 flex-col sm:flex-row">
+                            <div className="flex-1">
+                                <label className="block text-[10px] uppercase tracking-widest text-brand-blue mb-2 font-bold">Facebook Oldal URL (Publikus)</label>
+                                <input type="url" value={facebook} onChange={e => setFacebook(e.target.value)}
+                                    className="w-full bg-black/40 border border-white/20 rounded-xl p-3 text-white focus:outline-none focus:border-brand-purple focus:ring-1 focus:ring-brand-purple transition-colors"
+                                    placeholder="https://facebook.com/valami" />
+                            </div>
+                            <div className="flex-1">
+                                <label className="block text-[10px] uppercase tracking-widest text-brand-blue mb-2 font-bold">Instagram URL (Publikus)</label>
+                                <input type="url" value={instagram} onChange={e => setInstagram(e.target.value)}
+                                    className="w-full bg-black/40 border border-white/20 rounded-xl p-3 text-white focus:outline-none focus:border-brand-purple focus:ring-1 focus:ring-brand-purple transition-colors"
+                                    placeholder="https://instagram.com/valami" />
+                            </div>
+                        </div>
+
+                        <div>
+                            <label className="block text-[10px] uppercase tracking-widest text-brand-blue mb-2 font-bold">Szervezői Mottó / Szlogen</label>
+                            <input type="text" value={slogan} onChange={e => setSlogan(e.target.value)}
+                                className="w-full bg-black/40 border border-white/20 rounded-xl p-3 text-gold font-bold italic focus:outline-none focus:border-brand-purple focus:ring-1 focus:ring-brand-purple transition-colors"
+                                placeholder="&quot;Minden esemény egy új élmény...&quot;" />
+                            <p className="text-[10px] text-gray-500 mt-1">Ez a rövid szöveg fog megjelenni a szervező neve alatt a kártyákon.</p>
+                        </div>
+
+                        <div>
+                            <label className="block text-[10px] uppercase tracking-widest text-brand-blue mb-2 font-bold">Részletes Bemutatkozás</label>
+                            <div className="bg-black/60 rounded-xl overflow-hidden border border-white/20 focus-within:border-brand-purple focus-within:ring-1 focus-within:ring-brand-purple transition-colors">
+                                <ReactQuill
+                                    theme="snow"
+                                    value={introduction}
+                                    onChange={setIntroduction}
+                                    className="text-white min-h-[250px] editor-container"
+                                    placeholder="Írd ide a részletes bemutatkozást..."
+                                />
+                            </div>
+                            <p className="text-[10px] text-gray-500 mt-2">A szöveg formázható. Itt mutathatja be a felhasználó részletesen a munkásságát.</p>
                         </div>
                     </div>
 

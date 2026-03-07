@@ -26,9 +26,10 @@ export default function DashboardPage() {
     const [modalLoading, setModalLoading] = useState(false);
 
     // Szűrési állapotok
-    const [searchQuery, setSearchQuery] = useState('');
-    const [startDate, setStartDate] = useState('');
-    const [endDate, setEndDate] = useState('');
+    const [searchQuery, setSearchQuery] = useState(() => typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('searchQuery') || '' : '');
+    const [startDate, setStartDate] = useState(() => typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('startDate') || '' : '');
+    const [endDate, setEndDate] = useState(() => typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('endDate') || '' : '');
+    const [statusFilter, setStatusFilter] = useState(() => typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('statusFilter') || '' : '');
 
     // Nézet állapota ('grid' vagy 'table')
     const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
@@ -45,6 +46,13 @@ export default function DashboardPage() {
         setViewMode(mode);
         localStorage.setItem('eventViewMode', mode);
     };
+
+    useEffect(() => {
+        sessionStorage.setItem('searchQuery', searchQuery);
+        sessionStorage.setItem('startDate', startDate);
+        sessionStorage.setItem('endDate', endDate);
+        sessionStorage.setItem('statusFilter', statusFilter);
+    }, [searchQuery, startDate, endDate, statusFilter]);
 
     const handleSignOut = async () => {
         await supabase.auth.signOut();
@@ -176,6 +184,39 @@ export default function DashboardPage() {
         // A hasPermission függvény NEM kerül ide, mert minden renderben új referenciát kap.
     }, [permsLoading, permissions, router]);
 
+    const handleDuplicate = async (eventToCopy: any) => {
+        if (!user) return;
+        setLoading(true);
+
+        const newEvent = {
+            title: `${eventToCopy.title} (Másolat)`,
+            description: eventToCopy.description,
+            date: eventToCopy.date,
+            location: eventToCopy.location,
+            category: eventToCopy.category,
+            image_url: eventToCopy.image_url,
+            is_public: false, // a régi kompatibilitás miatt
+            status: 'draft', // az új mező alapján mindig piszkozat
+            user_id: user.id
+        };
+
+        const { data, error } = await supabase
+            .from('events')
+            .insert(newEvent)
+            .select()
+            .single();
+
+        setLoading(false);
+
+        if (error) {
+            console.error("Másolási hiba:", error);
+            alert("Hiba történt a másolás során.");
+        } else if (data) {
+            // Átirányítás a másolt esemény szerkesztési oldalára
+            router.push(`/dashboard/edit/${data.id}`);
+        }
+    };
+
     if (loading) {
         return <div className="p-8 text-center text-gray-500 glow-text">Adatok betöltése...</div>;
     }
@@ -188,7 +229,9 @@ export default function DashboardPage() {
         const eventDate = new Date(event.date).getTime();
         const matchesStartDate = startDate ? eventDate >= new Date(startDate).getTime() : true;
         const matchesEndDate = endDate ? eventDate <= new Date(endDate).getTime() + 86400000 : true;
-        return matchesSearch && matchesStartDate && matchesEndDate;
+        const matchesStatus = statusFilter ? event.status === statusFilter : true;
+
+        return matchesSearch && matchesStartDate && matchesEndDate && matchesStatus;
     });
 
     return (
@@ -280,36 +323,51 @@ export default function DashboardPage() {
                             : 'Részvételeim'}
                     </h2>
 
-                    <div className="flex flex-wrap gap-4 items-center">
-                        <div>
+                    <div className="flex flex-wrap gap-3 sm:gap-4 items-end">
+                        <div className="flex-1 min-w-[140px] max-w-[200px]">
                             <label className="block text-[10px] uppercase tracking-widest text-brand-blue mb-1 font-bold">Keresés</label>
                             <input
                                 type="text"
                                 placeholder="Esemény címe..."
-                                className="bg-black/40 border border-white/20 rounded px-3 py-2 text-white placeholder-gray-500 focus:outline-none focus:border-gold w-full sm:w-48 text-sm transition-colors"
+                                className="bg-black/40 border border-white/20 rounded-xl p-3 text-white placeholder-gray-500 focus:outline-none focus:border-gold w-full text-xs transition-colors font-mono tracking-widest"
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                             />
                         </div>
-                        <div className="w-48">
+                        <div className="w-[125px] sm:w-[140px]">
                             <label className="block text-[10px] uppercase tracking-widest text-brand-blue mb-1 font-bold">Ettől</label>
                             <CustomDateInput
                                 value={startDate}
                                 onChange={(val) => setStartDate(val)}
                             />
                         </div>
-                        <div className="w-48">
+                        <div className="w-[125px] sm:w-[140px]">
                             <label className="block text-[10px] uppercase tracking-widest text-brand-blue mb-1 font-bold">Eddig</label>
                             <CustomDateInput
                                 value={endDate}
                                 onChange={(val) => setEndDate(val)}
                             />
                         </div>
-                        <div className="pt-5">
-                            {(searchQuery || startDate || endDate) && (
+                        {activeTab === 'organized' && (
+                            <div className="w-[120px] sm:w-[130px]">
+                                <label className="block text-[10px] uppercase tracking-widest text-brand-blue mb-1 font-bold">Státusz</label>
+                                <select
+                                    className="bg-black/40 border border-white/20 rounded-xl p-3 text-white focus:outline-none focus:border-gold w-full text-xs transition-colors appearance-none tracking-widest font-mono"
+                                    value={statusFilter}
+                                    onChange={(e) => setStatusFilter(e.target.value)}
+                                >
+                                    <option value="" className="bg-gray-900 text-gray-300">Összes állapot</option>
+                                    <option value="published" className="bg-gray-900 text-brand-blue font-bold">Publikált</option>
+                                    <option value="draft" className="bg-gray-900 text-gray-400">Piszkozat</option>
+                                    <option value="cancelled" className="bg-gray-900 text-red-400">Törölt</option>
+                                </select>
+                            </div>
+                        )}
+                        <div className="mb-[2px]">
+                            {(searchQuery || startDate || endDate || statusFilter) && (
                                 <button
-                                    onClick={() => { setSearchQuery(''); setStartDate(''); setEndDate(''); }}
-                                    className="text-xs text-gold hover:text-white tracking-widest uppercase transition-colors"
+                                    onClick={() => { setSearchQuery(''); setStartDate(''); setEndDate(''); setStatusFilter(''); }}
+                                    className="text-[10px] px-3 py-2 border border-white/10 rounded-lg text-gold hover:text-white hover:border-gold tracking-widest uppercase transition-colors whitespace-nowrap bg-black/40"
                                 >
                                     Törlés
                                 </button>
@@ -335,8 +393,8 @@ export default function DashboardPage() {
                     </div>
 
                     {activeTab === 'organized' && (
-                        <Link href="/dashboard/new" className="bg-gradient-to-r from-gold to-yellow-600 text-black px-4 py-2 rounded text-xs font-bold uppercase tracking-widest whitespace-nowrap hover:shadow-[0_0_15px_var(--color-gold)] transition-all">
-                            + Új Esemény
+                        <Link href="/dashboard/new" className="bg-gradient-to-r from-gold to-yellow-600 text-black px-4 py-2.5 rounded-xl text-[10px] font-bold uppercase tracking-widest whitespace-nowrap hover:shadow-[0_0_15px_var(--color-gold)] transition-all">
+                            + Új
                         </Link>
                     )}
                 </div>
@@ -363,13 +421,23 @@ export default function DashboardPage() {
                                     )}
                                     <div className="p-6 flex-grow pb-16">
                                         <div className="flex justify-between items-start mb-4">
-                                            <h3 className="font-bold text-xl line-clamp-2 pr-2 text-white group-hover:text-gold transition-colors">{event.title}</h3>
+                                            {event.status === 'published' ? (
+                                                <Link href={`/event/${event.id}`}>
+                                                    <h3 className="font-bold text-xl line-clamp-2 pr-2 text-white hover:text-gold transition-colors hover:underline underline-offset-4 decoration-white/20">{event.title}</h3>
+                                                </Link>
+                                            ) : (
+                                                <Link href={`/dashboard/edit/${event.id}`}>
+                                                    <h3 className="font-bold text-xl line-clamp-2 pr-2 text-gray-500 hover:text-gray-300 transition-colors hover:underline underline-offset-4 decoration-white/20">{event.title}</h3>
+                                                </Link>
+                                            )}
 
                                             {activeTab === 'organized' && (
-                                                event.is_public ? (
-                                                    <span className="bg-brand-blue/20 border border-brand-blue/50 text-brand-blue text-[10px] uppercase tracking-widest px-2 py-1 rounded-full font-bold whitespace-nowrap shrink-0 shadow-[0_0_10px_var(--color-brand-blue)]">Publikus</span>
+                                                event.status === 'published' ? (
+                                                    <span className="bg-brand-blue/20 border border-brand-blue/50 text-brand-blue text-[10px] uppercase tracking-widest px-2 py-1 rounded-full font-bold whitespace-nowrap shrink-0 shadow-[0_0_10px_var(--color-brand-blue)]">Publikált</span>
+                                                ) : event.status === 'cancelled' ? (
+                                                    <span className="bg-red-900/40 border border-red-600/50 text-red-400 text-[10px] uppercase tracking-widest px-2 py-1 rounded-full font-bold whitespace-nowrap shrink-0">Törölt</span>
                                                 ) : (
-                                                    <span className="bg-gray-800 border border-gray-600 text-gray-300 text-[10px] uppercase tracking-widest px-2 py-1 rounded-full font-bold whitespace-nowrap shrink-0">Privát</span>
+                                                    <span className="bg-gray-800 border border-gray-600 text-gray-300 text-[10px] uppercase tracking-widest px-2 py-1 rounded-full font-bold whitespace-nowrap shrink-0">Piszkozat</span>
                                                 )
                                             )}
                                         </div>
@@ -391,7 +459,7 @@ export default function DashboardPage() {
                                             )}
                                         </div>
                                         {event.description && (
-                                            <p className="text-gray-400 mt-4 line-clamp-3 mb-14 text-sm font-light leading-relaxed">{event.description}</p>
+                                            <p className="text-gray-400 mt-4 line-clamp-3 mb-14 text-sm font-light leading-relaxed">{event.description.replace(/<[^>]+>/g, ' ')}</p>
                                         )}
 
                                         <div className="absolute bottom-5 right-5 flex gap-2 w-full justify-end pr-5">
@@ -403,6 +471,12 @@ export default function DashboardPage() {
                                                     >
                                                         Szerkeszt
                                                     </Link>
+                                                    <button
+                                                        onClick={() => handleDuplicate(event)}
+                                                        className="bg-transparent border border-brand-purple/50 text-brand-purple hover:bg-brand-purple/20 px-3 py-1.5 rounded text-[10px] uppercase tracking-widest font-bold transition-all"
+                                                    >
+                                                        Másol
+                                                    </button>
                                                     <button
                                                         onClick={() => handleDelete(event.id)}
                                                         className="bg-transparent border border-red-500/50 text-red-400 hover:bg-red-500/20 px-3 py-1.5 rounded text-[10px] uppercase tracking-widest font-bold transition-all"
@@ -455,7 +529,17 @@ export default function DashboardPage() {
                                 <tbody className="divide-y divide-white/5">
                                     {filteredEvents.map((event) => (
                                         <tr key={event.id} className="hover:bg-white/5 transition-colors">
-                                            <td className="px-6 py-4 font-bold text-white">{event.title}</td>
+                                            <td className="px-6 py-4 font-bold text-white">
+                                                {event.status === 'published' ? (
+                                                    <Link href={`/event/${event.id}`} className="hover:text-gold transition-colors block">
+                                                        {event.title}
+                                                    </Link>
+                                                ) : (
+                                                    <Link href={`/dashboard/edit/${event.id}`} className="hover:text-gray-300 text-gray-500 transition-colors block">
+                                                        {event.title}
+                                                    </Link>
+                                                )}
+                                            </td>
                                             <td className="px-6 py-4 text-gray-400 whitespace-nowrap font-mono text-xs">{new Date(event.date).toLocaleDateString('hu-HU')}</td>
                                             <td className="px-6 py-4 text-gray-400">{event.category || '-'}</td>
                                             <td className="px-6 py-4 text-gray-400">{event.location || '-'}</td>
@@ -473,10 +557,12 @@ export default function DashboardPage() {
                                                         {event.event_attendees?.[0]?.count || 0}
                                                     </td>
                                                     <td className="px-6 py-4 text-center">
-                                                        {event.is_public ? (
-                                                            <span className="bg-brand-blue/20 border border-brand-blue/50 text-brand-blue text-[10px] uppercase tracking-widest px-2 py-1 rounded-full font-bold shadow-[0_0_10px_var(--color-brand-blue)]">Publikus</span>
+                                                        {event.status === 'published' ? (
+                                                            <span className="bg-brand-blue/20 border border-brand-blue/50 text-brand-blue text-[10px] uppercase tracking-widest px-2 py-1 rounded-full font-bold shadow-[0_0_10px_var(--color-brand-blue)]">Publikált</span>
+                                                        ) : event.status === 'cancelled' ? (
+                                                            <span className="bg-red-900/40 border border-red-600/50 text-red-400 text-[10px] uppercase tracking-widest px-2 py-1 rounded-full font-bold whitespace-nowrap shrink-0">Törölt</span>
                                                         ) : (
-                                                            <span className="bg-gray-800 border border-gray-600 text-gray-400 text-[10px] uppercase tracking-widest px-2 py-1 rounded-full font-bold">Privát</span>
+                                                            <span className="bg-gray-800 border border-gray-600 text-gray-400 text-[10px] uppercase tracking-widest px-2 py-1 rounded-full font-bold">Piszkozat</span>
                                                         )}
                                                     </td>
                                                 </>
@@ -491,6 +577,12 @@ export default function DashboardPage() {
                                                         >
                                                             Szerkeszt
                                                         </Link>
+                                                        <button
+                                                            onClick={() => handleDuplicate(event)}
+                                                            className="text-brand-purple hover:text-brand-purple/70 font-bold uppercase tracking-widest text-[10px] mr-4 transition-colors"
+                                                        >
+                                                            Másol
+                                                        </button>
                                                         <button
                                                             onClick={() => handleDelete(event.id)}
                                                             className="text-red-400 hover:text-red-300 font-bold uppercase tracking-widest text-[10px] transition-colors"
@@ -537,51 +629,54 @@ export default function DashboardPage() {
                         </button>
                     )}
                 </div>
-            )}
+            )
+            }
 
             {/* Modal a résztvevőknek */}
-            {isModalOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
-                    <div className="glass-panel rounded-2xl glow-border border border-white/20 p-8 max-w-lg w-full relative">
-                        <button
-                            onClick={() => setIsModalOpen(false)}
-                            className="absolute top-4 right-4 text-gray-400 hover:text-white"
-                        >
-                            ✕
-                        </button>
-                        <h2 className="text-2xl font-bold text-white mb-2">Résztvevők</h2>
-                        <h3 className="text-gold text-sm font-light mb-6 uppercase tracking-widest">{modalEventTitle}</h3>
+            {
+                isModalOpen && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+                        <div className="glass-panel rounded-2xl glow-border border border-white/20 p-8 max-w-lg w-full relative">
+                            <button
+                                onClick={() => setIsModalOpen(false)}
+                                className="absolute top-4 right-4 text-gray-400 hover:text-white"
+                            >
+                                ✕
+                            </button>
+                            <h2 className="text-2xl font-bold text-white mb-2">Résztvevők</h2>
+                            <h3 className="text-gold text-sm font-light mb-6 uppercase tracking-widest">{modalEventTitle}</h3>
 
-                        {modalLoading ? (
-                            <div className="text-center text-gray-400 py-8">Betöltés...</div>
-                        ) : attendeesList.length > 0 ? (
-                            <ul className="space-y-3 max-h-64 overflow-y-auto pr-2">
-                                {attendeesList.map((attendee, index) => {
-                                    return (
-                                        <li key={index} className="flex items-center gap-3 bg-black/40 p-3 rounded-xl border border-white/10">
-                                            <div className="w-10 h-10 rounded-full bg-brand-blue/20 text-brand-blue flex items-center justify-center shrink-0 uppercase font-bold text-xs ring-1 ring-brand-blue/50 overflow-hidden">
-                                                {attendee.avatar_url ? (
-                                                    <img src={attendee.avatar_url} alt="Avatar" className="w-full h-full object-cover" />
-                                                ) : (
-                                                    attendee.display_name ? attendee.display_name.charAt(0) : "V"
-                                                )}
-                                            </div>
-                                            <div>
-                                                <p className="text-white font-bold text-sm">{attendee.display_name || 'Névtelen Felhasználó'}</p>
-                                                <p className="text-gray-500 text-xs font-mono truncate max-w-[200px]">{attendee.email || attendee.id}</p>
-                                            </div>
-                                        </li>
-                                    );
-                                })}
-                            </ul>
-                        ) : (
-                            <div className="text-center text-gray-400 py-8 border border-dashed border-white/20 rounded-xl">
-                                Még nincs regisztrált résztvevő.
-                            </div>
-                        )}
+                            {modalLoading ? (
+                                <div className="text-center text-gray-400 py-8">Betöltés...</div>
+                            ) : attendeesList.length > 0 ? (
+                                <ul className="space-y-3 max-h-64 overflow-y-auto pr-2">
+                                    {attendeesList.map((attendee, index) => {
+                                        return (
+                                            <li key={index} className="flex items-center gap-3 bg-black/40 p-3 rounded-xl border border-white/10">
+                                                <div className="w-10 h-10 rounded-full bg-brand-blue/20 text-brand-blue flex items-center justify-center shrink-0 uppercase font-bold text-xs ring-1 ring-brand-blue/50 overflow-hidden">
+                                                    {attendee.avatar_url ? (
+                                                        <img src={attendee.avatar_url} alt="Avatar" className="w-full h-full object-cover" />
+                                                    ) : (
+                                                        attendee.display_name ? attendee.display_name.charAt(0) : "V"
+                                                    )}
+                                                </div>
+                                                <div>
+                                                    <p className="text-white font-bold text-sm">{attendee.display_name || 'Névtelen Felhasználó'}</p>
+                                                    <p className="text-gray-500 text-xs font-mono truncate max-w-[200px]">{attendee.email || attendee.id}</p>
+                                                </div>
+                                            </li>
+                                        );
+                                    })}
+                                </ul>
+                            ) : (
+                                <div className="text-center text-gray-400 py-8 border border-dashed border-white/20 rounded-xl">
+                                    Még nincs regisztrált résztvevő.
+                                </div>
+                            )}
+                        </div>
                     </div>
-                </div>
-            )}
-        </div>
+                )
+            }
+        </div >
     );
 }

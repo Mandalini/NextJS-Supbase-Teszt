@@ -101,8 +101,8 @@ export default function CategoriesPage() {
     return (
         <div className="p-8 max-w-4xl mx-auto min-h-screen text-white">
             <div className="flex flex-col mb-10 gap-4">
-                <Link href="/dashboard" className="text-brand-blue hover:text-white transition-colors text-xs font-bold uppercase tracking-widest mb-4 inline-block flex items-center gap-2">
-                    <span className="text-lg">&larr;</span> Vissza a Vezérlőpultra
+                <Link href="/dashboard" className="self-start px-5 py-2.5 glass-panel text-white hover:bg-white/10 rounded-xl transition-all glow-border text-[10px] uppercase tracking-widest font-bold flex items-center gap-2 mb-4">
+                    <span>&larr;</span> Vissza a Vezérlőpultra
                 </Link>
                 <h1 className="text-4xl font-extralight tracking-wider">KATEGÓRIÁK <span className="text-gold font-bold glow-text">KEZELÉSE</span></h1>
                 <p className="text-gray-400 text-sm font-light">

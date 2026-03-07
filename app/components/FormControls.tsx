@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 
 export function CustomDateInput({ value, onChange }: { value: string, onChange: (val: string) => void }) {
     const [textValue, setTextValue] = useState(value ? value.replace(/-/g, '.') : '');
+    const dateInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
         if (value) {
@@ -32,6 +33,16 @@ export function CustomDateInput({ value, onChange }: { value: string, onChange: 
         }
     };
 
+    const handleOpenPicker = () => {
+        try {
+            if (dateInputRef.current && 'showPicker' in dateInputRef.current) {
+                dateInputRef.current.showPicker();
+            }
+        } catch (e) {
+            console.error(e);
+        }
+    };
+
     return (
         <div className="relative group">
             <input
@@ -39,22 +50,24 @@ export function CustomDateInput({ value, onChange }: { value: string, onChange: 
                 placeholder="ÉÉÉÉ.HH.NN"
                 value={textValue}
                 onChange={handleTextChange}
-                className="w-full bg-black/40 border border-white/20 rounded-xl p-3 pl-12 text-white focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold transition-colors font-mono"
+                className="w-full bg-black/40 border border-white/20 rounded-xl p-3 pr-10 pl-3 text-white focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold transition-colors font-mono text-xs"
             />
             {/* Native date picker hidden but clickable via the calendar icon */}
-            <div className="absolute top-0 left-0 bottom-0 w-12 flex items-center justify-center text-gray-400 group-hover:text-gold transition-colors overflow-hidden">
+            <div
+                className="absolute top-0 right-0 bottom-0 w-10 flex items-center justify-center text-gray-400 group-hover:text-gold transition-colors overflow-hidden cursor-pointer"
+                onClick={handleOpenPicker}
+            >
                 <input
+                    ref={dateInputRef}
                     type="date"
                     className="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-10"
                     onChange={handleDateSelect}
                     value={value || ''}
+                    style={{ WebkitAppearance: 'none' }}
                 />
-                <span className="pointer-events-none text-xl relative z-0">📅</span>
+                <span className="pointer-events-none text-base relative z-0">📅</span>
             </div>
 
-            <div className="absolute -top-6 right-0 text-[10px] text-gray-500 uppercase">
-                Vagy gépeld be: ÉÉÉÉ.HH.NN
-            </div>
         </div>
     );
 }

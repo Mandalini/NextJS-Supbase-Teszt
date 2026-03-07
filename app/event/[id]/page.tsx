@@ -37,9 +37,9 @@ export default async function PublicEventPage({ params, searchParams }: { params
                     <nav>
                         <Link
                             href="/"
-                            className="px-4 py-2 rounded-full border border-brand-blue/30 text-brand-blue hover:bg-brand-blue/10 text-xs uppercase tracking-widest transition-colors font-bold shadow-[0_0_10px_var(--color-brand-blue)]/20"
+                            className="inline-flex items-center gap-2 px-5 py-2.5 glass-panel text-white hover:bg-white/10 rounded-xl transition-all glow-border text-[10px] uppercase tracking-widest font-bold"
                         >
-                            &larr; Kezdőlap
+                            <span>&larr;</span> Kezdőlap
                         </Link>
                     </nav>
                 </div>
@@ -109,9 +109,10 @@ export default async function PublicEventPage({ params, searchParams }: { params
                             Esemény Leírása
                         </h2>
                         {event.description ? (
-                            <div className="text-gray-300 font-light leading-relaxed whitespace-pre-wrap text-lg">
-                                {event.description}
-                            </div>
+                            <div
+                                className="prose prose-invert prose-brand prose-p:text-gray-300 prose-a:text-brand-blue hover:prose-a:text-brand-purple prose-headings:text-white max-w-none text-lg font-light leading-relaxed"
+                                dangerouslySetInnerHTML={{ __html: event.description }}
+                            />
                         ) : (
                             <p className="text-gray-600 font-light italic">Nincs megadva részletes leírás ehhez az eseményhez.</p>
                         )}
