@@ -1,0 +1,75 @@
+n8n + Antigravity MCP beállítási összefoglaló
+Cél
+Az Antigravity IDE-ben az AI workflow-t is tudjon létrehozni / módosítani az n8n-ben.
+
+A helyes megoldás
+A czlonkowski/n8n-mcp MCP szervert kell használni az n8n REST API-val.
+https://github.com/czlonkowski/n8n-mcp?tab=readme-ov-file
+Kapcsolódó videó: https://www.youtube.com/watch?v=ZYpDYJ5-3VQ
+
+
+
+Nem ezt:
+beépített n8n MCP endpoint: /mcp-server/http
+MCP Access Token
+Hanem ezt:
+N8N_API_URL = az n8n alap URL-je
+N8N_API_KEY = az n8n-ben generált API kulcs
+A te URL-ed
+text
+https://n8n.srv1146449.hstgr.cloud
+Hol találod az API kulcsot?
+n8n-ben:
+
+Settings → n8n API → Create API Key
+
+Működő config
+json
+{
+  "mcpServers": {
+    "n8n-mcp": {
+      "command": "npx",
+      "args": ["-y", "n8n-mcp"],
+      "env": {
+        "MCP_MODE": "stdio",
+        "LOG_LEVEL": "error",
+        "DISABLE_CONSOLE_OUTPUT": "true",
+        "N8N_API_URL": "https://n8n.srv1146449.hstgr.cloud",
+        "N8N_API_KEY": "IDE_JON_AZ_N8N_API_KULCS"
+      }
+    }
+  }
+}
+Beállítás lépései
+Nyisd meg az n8n-t
+Menj ide: Settings → n8n API
+Katt: Create API Key
+Másold ki a kulcsot
+Illeszd be a configba N8N_API_KEY értéknek
+N8N_API_URL legyen az alap domain:
+text
+https://n8n.srv1146449.hstgr.cloud
+Mentsd el a configot
+Indítsd újra az Antigravity-t
+Gyors teszt promptok
+text
+Listázd ki az n8n workflow-kat.
+text
+Hozz létre egy új n8n workflow-t Manual Triggerrel és egy Set node-dal.
+text
+Készíts egy webhook workflow-t, ami JSON választ ad vissza.
+Fontos különbség
+Mire kell?	Mit használj?
+Workflow futtatás / olvasás MCP-n	beépített n8n MCP
+Workflow létrehozás / módosítás	n8n-mcp + REST API
+Tipikus hiba
+Rossz:
+text
+https://n8n.srv1146449.hstgr.cloud/mcp-server/http
+Jó:
+text
+https://n8n.srv1146449.hstgr.cloud
+Lényeg 1 mondatban
+Ha az AI-val workflow-t akarsz létrehozni az n8n-ben, akkor az n8n-mcp szervert az n8n alap URL-jére és az n8n API kulcsára kell kötni — nem a beépített MCP végpontra.
+
+Ha kéred, csinálok ebből egy kimásolható jegyzet verziót is, amit el tudsz menteni .md fájlba.
