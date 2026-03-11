@@ -44,6 +44,9 @@ export default function EditEventPage() {
     const [formData, setFormData] = useState({
         title: '',
         date: '',
+        event_time: '',
+        price: '',
+        capacity: '',
         location: '',
         description: '',
         category: 'Egyéb',
@@ -75,6 +78,9 @@ export default function EditEventPage() {
                 setFormData({
                     title: data.title || '',
                     date: data.date ? data.date.split('T')[0] : '',
+                    event_time: data.event_time ? data.event_time.substring(0, 5) : '',
+                    price: data.price ? data.price.toString() : '',
+                    capacity: data.capacity ? data.capacity.toString() : '',
                     location: data.location || '',
                     description: data.description || '',
                     category: data.category || 'Egyéb',
@@ -142,9 +148,16 @@ export default function EditEventPage() {
         // Remove UI-only fields from database update
         const { owner_name, modifier_name, created_at, ...dbData } = updateData;
 
+        const finalDbData = {
+            ...dbData,
+            event_time: dbData.event_time || null,
+            price: dbData.price ? parseFloat(dbData.price as string) : null,
+            capacity: dbData.capacity ? parseInt(dbData.capacity as string, 10) : null
+        };
+
         const { error } = await supabase
             .from('events')
-            .update(dbData)
+            .update(finalDbData)
             .eq('id', id);
 
         setLoading(false);
@@ -192,6 +205,40 @@ export default function EditEventPage() {
                         value={formData.date}
                         onChange={(val) => setFormData({ ...formData, date: val })}
                     />
+                </div>
+
+                <div className="flex flex-col sm:flex-row gap-4">
+                    <div className="flex-1">
+                        <label className="block text-xs uppercase tracking-widest text-gray-400 mb-2 font-bold">Időpont</label>
+                        <input
+                            type="time"
+                            className="w-full bg-black/40 border border-white/20 rounded-xl p-3 text-white focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold transition-colors [color-scheme:dark]"
+                            value={formData.event_time}
+                            onChange={(e) => setFormData({ ...formData, event_time: e.target.value })}
+                        />
+                    </div>
+                    <div className="flex-1">
+                        <label className="block text-xs uppercase tracking-widest text-gray-400 mb-2 font-bold">Részvételi díj (HUF)</label>
+                        <input
+                            type="number"
+                            min="0"
+                            step="1"
+                            className="w-full bg-black/40 border border-white/20 rounded-xl p-3 text-white focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold transition-colors [color-scheme:dark]"
+                            value={formData.price}
+                            onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                        />
+                    </div>
+                    <div className="flex-1">
+                        <label className="block text-xs uppercase tracking-widest text-gray-400 mb-2 font-bold">Férőhely (fő)</label>
+                        <input
+                            type="number"
+                            min="1"
+                            step="1"
+                            className="w-full bg-black/40 border border-white/20 rounded-xl p-3 text-white focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold transition-colors [color-scheme:dark]"
+                            value={formData.capacity}
+                            onChange={(e) => setFormData({ ...formData, capacity: e.target.value })}
+                        />
+                    </div>
                 </div>
 
                 <div>

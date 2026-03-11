@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { CustomDateInput } from './FormControls';
+import EditableTable from './EditableTable';
 
 export default function HomeEventList({ initialEvents, categories }: { initialEvents: any[], categories: any[] }) {
     const [selectedCategory, setSelectedCategory] = useState<string>('Összes');
@@ -41,6 +42,43 @@ export default function HomeEventList({ initialEvents, categories }: { initialEv
 
         return matchesCategory && matchesSearch && matchesStartDate && matchesEndDate;
     });
+
+    const tableColumns = [
+        { 
+            key: 'title', 
+            label: 'Cím', 
+            width: 250,
+            render: (val: any, row: any) => (
+                <Link href={`/event/${row.id}`} className="font-bold text-white text-base truncate hover:text-gold transition-colors inline-block w-full">
+                    {row.title}
+                </Link>
+            )
+        },
+        { 
+            key: 'date', 
+            label: 'Dátum', 
+            width: 120,
+            render: (val: any, row: any) => (
+                <span className="text-gray-400 whitespace-nowrap font-mono text-xs">
+                    {new Date(row.date).toLocaleDateString('hu-HU')}
+                </span>
+            )
+        },
+        { key: 'event_time', label: 'Időpont', width: 90, render: (val: any) => <span className="text-gray-400 text-xs truncate">{val ? val.substring(0, 5) : '-'}</span> },
+        { 
+            key: 'category', 
+            label: 'Kategória', 
+            width: 120, 
+            render: (val: any) => (
+                <span className="bg-brand-blue/20 border border-brand-blue/50 text-brand-blue text-[10px] uppercase tracking-widest px-2 py-1 rounded-full font-bold whitespace-nowrap">
+                    {val || '-'}
+                </span>
+            )
+        },
+        { key: 'location', label: 'Helyszín', width: 150, render: (val: any) => <span className="text-gray-400 font-mono text-xs truncate">{val || '-'}</span> },
+        { key: 'price', label: 'Ár (HUF)', width: 100, render: (val: any) => <span className="text-gray-400 text-xs truncate font-mono">{val === 0 ? 'Ingyenes' : val ? `${val.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ")} Ft` : '-'}</span> },
+        { key: 'capacity', label: 'Férőhely', width: 100, render: (val: any) => <span className="text-gray-400 text-xs truncate">{val ? `${val} fő` : '-'}</span> },
+    ];
 
     return (
         <div className="w-full relative z-10 text-white">
@@ -187,42 +225,16 @@ export default function HomeEventList({ initialEvents, categories }: { initialEv
 
                     {/* TÁBLÁZATOS NÉZET */}
                     {viewMode === 'table' && (
-                        <div className="overflow-x-auto glass-panel rounded-xl glow-border border border-white/10">
-                            <table className="min-w-full divide-y divide-white/10 text-sm">
-                                <thead className="bg-black/40">
-                                    <tr>
-                                        <th className="px-6 py-5 text-left font-bold text-brand-blue uppercase tracking-widest text-[10px]">Cím</th>
-                                        <th className="px-6 py-5 text-left font-bold text-brand-blue uppercase tracking-widest text-[10px]">Dátum</th>
-                                        <th className="px-6 py-5 text-left font-bold text-brand-blue uppercase tracking-widest text-[10px]">Kategória</th>
-                                        <th className="px-6 py-5 text-left font-bold text-brand-blue uppercase tracking-widest text-[10px]">Helyszín</th>
-                                        <th className="px-6 py-5 text-right font-bold text-brand-blue uppercase tracking-widest text-[10px]">Műveletek</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-white/5">
-                                    {filteredEvents.map((event) => (
-                                        <tr key={event.id} className="hover:bg-white/5 transition-colors cursor-pointer" onClick={() => window.location.href = `/event/${event.id}`}>
-                                            <td className="px-6 py-5 font-bold text-white text-base">{event.title}</td>
-                                            <td className="px-6 py-5 text-gray-400 whitespace-nowrap font-mono text-xs">{new Date(event.date).toLocaleDateString('hu-HU')}</td>
-                                            <td className="px-6 py-5">
-                                                <span className="bg-brand-blue/20 border border-brand-blue/50 text-brand-blue text-[10px] uppercase tracking-widest px-2 py-1 rounded-full font-bold whitespace-nowrap">
-                                                    {event.category || '-'}
-                                                </span>
-                                            </td>
-                                            <td className="px-6 py-5 text-gray-400 font-mono text-xs">{event.location || '-'}</td>
-                                            <td className="px-6 py-5 text-right whitespace-nowrap">
-                                                <Link
-                                                    href={`/event/${event.id}`}
-                                                    className="text-gold hover:text-white font-bold uppercase tracking-widest text-[10px] transition-colors bg-gold/10 px-4 py-2 rounded-full border border-gold/30 hover:bg-gold/30"
-                                                    onClick={(e) => e.stopPropagation()}
-                                                >
-                                                    Részletek &rarr;
-                                                </Link>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
+                            <EditableTable
+                            data={filteredEvents}
+                            columns={tableColumns}
+                            onSave={async () => {}}
+                            onDelete={async () => {}}
+                            idField="id"
+                            storageKey="home_events_table"
+                            canEdit={false}
+                            canDelete={false}
+                        />
                     )}
                 </>
             ) : (

@@ -20,6 +20,7 @@ interface Column {
     width?: number;
     editable?: boolean;
     type?: 'text' | 'boolean' | 'number' | 'date' | 'time';
+    render?: (value: any, row: any) => React.ReactNode;
 }
 
 interface EditableTableProps {
@@ -33,6 +34,7 @@ interface EditableTableProps {
     actionsPosition?: 'start' | 'end';
     canEdit?: boolean;
     canDelete?: boolean;
+    customActions?: (row: any) => React.ReactNode;
 }
 
 export default function EditableTable({
@@ -45,7 +47,8 @@ export default function EditableTable({
     loading,
     actionsPosition = 'end',
     canEdit = true,
-    canDelete = true
+    canDelete = true,
+    customActions
 }: EditableTableProps) {
     const [tableColumns, setTableColumns] = useState<Column[]>(columns);
     const [editingId, setEditingId] = useState<string | number | null>(null);
@@ -126,9 +129,9 @@ export default function EditableTable({
     // Calculate total width for the table element
     const totalTableWidth = useMemo(() => {
         let w = tableColumns.reduce((acc, col) => acc + (col.width || 150), 0);
-        if (canEdit || canDelete) w += 120; // Műveletek oszlop fix szélessége
+        if (canEdit || canDelete || !!customActions) w += 120; // Műveletek oszlop fix szélessége
         return w;
-    }, [tableColumns, canEdit, canDelete]);
+    }, [tableColumns, canEdit, canDelete, customActions]);
 
     // Column Reordering (Drag & Drop)
     const handleDragStart = (idx: number) => {
@@ -263,6 +266,7 @@ export default function EditableTable({
                                 </svg>
                             </button>
                         )}
+                        {customActions && customActions(row)}
                     </>
                 )}
             </div>
@@ -294,7 +298,7 @@ export default function EditableTable({
             >
                 <thead className="bg-black/40">
                     <tr>
-                        {(canEdit || canDelete) && actionsPosition === 'start' && renderActionsHeader()}
+                        {(canEdit || canDelete || !!customActions) && actionsPosition === 'start' && renderActionsHeader()}
                         {tableColumns.map((col, idx) => (
                             <th
                                 key={col.key}
@@ -321,13 +325,13 @@ export default function EditableTable({
                                 />
                             </th>
                         ))}
-                        {actionsPosition === 'end' && renderActionsHeader()}
+                        {(canEdit || canDelete || !!customActions) && actionsPosition === 'end' && renderActionsHeader()}
                     </tr>
                 </thead>
                 <tbody className="divide-y divide-white/5">
                     {sortedData.map((row) => (
                         <tr key={row[idField]} className="hover:bg-white/5 transition-colors group">
-                            {actionsPosition === 'start' && renderActions(row)}
+                            {(canEdit || canDelete || !!customActions) && actionsPosition === 'start' && renderActions(row)}
                             {tableColumns.map((col) => {
                                 const isEditing = editingId === row[idField];
                                 const value = isEditing ? editData[col.key] : row[col.key];
@@ -351,6 +355,8 @@ export default function EditableTable({
                                                         className="w-full bg-black/60 border border-white/20 rounded px-2 py-1 text-white focus:outline-none focus:border-gold text-xs"
                                                     />
                                                 )
+                                            ) : col.render ? (
+                                                col.render(value, row)
                                             ) : (
                                                 <span className={`${row.highlight ? "text-gold font-bold" : "text-gray-300"} truncate block`}>
                                                     {col.type === 'boolean' 
@@ -382,7 +388,7 @@ export default function EditableTable({
                                     </td>
                                 );
                             })}
-                            {(canEdit || canDelete) && actionsPosition === 'end' && renderActions(row)}
+                            {(canEdit || canDelete || !!customActions) && actionsPosition === 'end' && renderActions(row)}
                         </tr>
                     ))}
                 </tbody>

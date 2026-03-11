@@ -37,6 +37,9 @@ export default function NewEventPage() {
     const [formData, setFormData] = useState({
         title: '',
         date: '',
+        event_time: '',
+        price: '',
+        capacity: '',
         location: '',
         description: '',
         category: 'Egyéb',
@@ -86,6 +89,9 @@ export default function NewEventPage() {
                 {
                     title: formData.title,
                     date: formData.date,
+                    event_time: formData.event_time || null,
+                    price: formData.price ? parseFloat(formData.price) : null,
+                    capacity: formData.capacity ? parseInt(formData.capacity, 10) : null,
                     location: formData.location,
                     description: formData.description,
                     category: formData.category,
@@ -139,6 +145,40 @@ export default function NewEventPage() {
                         value={formData.date}
                         onChange={(val) => setFormData({ ...formData, date: val })}
                     />
+                </div>
+
+                <div className="flex flex-col sm:flex-row gap-4">
+                    <div className="flex-1">
+                        <label className="block text-xs uppercase tracking-widest text-gray-400 mb-2 font-bold">Időpont</label>
+                        <input
+                            type="time"
+                            className="w-full bg-black/40 border border-white/20 rounded-xl p-3 text-white focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold transition-colors [color-scheme:dark]"
+                            value={formData.event_time}
+                            onChange={(e) => setFormData({ ...formData, event_time: e.target.value })}
+                        />
+                    </div>
+                    <div className="flex-1">
+                        <label className="block text-xs uppercase tracking-widest text-gray-400 mb-2 font-bold">Részvételi díj (HUF)</label>
+                        <input
+                            type="number"
+                            min="0"
+                            step="1"
+                            className="w-full bg-black/40 border border-white/20 rounded-xl p-3 text-white focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold transition-colors [color-scheme:dark]"
+                            value={formData.price}
+                            onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                        />
+                    </div>
+                    <div className="flex-1">
+                        <label className="block text-xs uppercase tracking-widest text-gray-400 mb-2 font-bold">Férőhely (fő)</label>
+                        <input
+                            type="number"
+                            min="1"
+                            step="1"
+                            className="w-full bg-black/40 border border-white/20 rounded-xl p-3 text-white focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold transition-colors [color-scheme:dark]"
+                            value={formData.capacity}
+                            onChange={(e) => setFormData({ ...formData, capacity: e.target.value })}
+                        />
+                    </div>
                 </div>
 
                 <div>

@@ -79,22 +79,58 @@ export default async function PublicEventPage({ params, searchParams }: { params
                             <h3 className="text-[10px] text-gray-500 uppercase tracking-widest mb-2 font-bold">Részletek</h3>
 
                             <div className="flex items-start gap-2 mt-3">
-                                <span className="text-gold text-base mt-0.5">📅</span>
+                                <span className="text-gold text-base mt-0.5 filter drop-shadow-[0_0_8px_rgba(212,175,55,0.4)]">📅</span>
                                 <div>
                                     <p className="text-white text-xs font-bold">Dátum</p>
-                                    <p className="text-gray-400 text-[10px] font-mono mt-0.5">
+                                    <p className="text-white/80 text-[11px] font-mono mt-0.5">
                                         {new Date(event.date).toLocaleDateString('hu-HU')}
                                     </p>
                                 </div>
                             </div>
 
+                            {event.event_time && (
+                                <div className="flex items-start gap-2 mt-4">
+                                    <span className="text-gold text-base mt-0.5 filter drop-shadow-[0_0_8px_rgba(212,175,55,0.4)]">🕒</span>
+                                    <div>
+                                        <p className="text-white text-xs font-bold">Időpont</p>
+                                        <p className="text-white/80 text-[11px] font-mono mt-0.5">
+                                            {event.event_time.substring(0, 5)}
+                                        </p>
+                                    </div>
+                                </div>
+                            )}
+
                             {event.location && (
                                 <div className="flex items-start gap-2 mt-4">
-                                    <span className="text-brand-blue text-base mt-0.5">📍</span>
+                                    <span className="text-brand-blue text-base mt-0.5 filter drop-shadow-[0_0_8px_rgba(0,194,255,0.3)]">📍</span>
                                     <div>
                                         <p className="text-white text-xs font-bold">Helyszín</p>
-                                        <p className="text-gray-400 text-[10px] font-mono mt-0.5 break-words">
+                                        <p className="text-white/80 text-[11px] font-mono mt-0.5 break-words">
                                             {event.location}
+                                        </p>
+                                    </div>
+                                </div>
+                            )}
+
+                            {event.price !== null && event.price !== undefined && (
+                                <div className="flex items-start gap-2 mt-4">
+                                    <span className="text-green-500 text-base mt-0.5 filter drop-shadow-[0_0_8px_rgba(34,197,94,0.3)]">💰</span>
+                                    <div>
+                                        <p className="text-white text-xs font-bold">Részvételi díj</p>
+                                        <p className="text-white/80 text-[11px] font-mono mt-0.5 break-words">
+                                            {event.price === 0 ? 'Ingyenes' : `${event.price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ")} Ft`}
+                                        </p>
+                                    </div>
+                                </div>
+                            )}
+
+                            {event.capacity !== null && event.capacity !== undefined && (
+                                <div className="flex items-start gap-2 mt-4">
+                                    <span className="text-orange-400 text-base mt-0.5 filter drop-shadow-[0_0_8px_rgba(251,146,60,0.3)]">🎟️</span>
+                                    <div>
+                                        <p className="text-white text-xs font-bold">Férőhely</p>
+                                        <p className="text-white/80 text-[11px] font-mono mt-0.5 break-words">
+                                            {event.capacity} fő
                                         </p>
                                     </div>
                                 </div>
@@ -102,7 +138,7 @@ export default async function PublicEventPage({ params, searchParams }: { params
 
                             {/* Szervező link */}
                             <div className="flex items-start gap-2 mt-4 pt-4 border-t border-white/5">
-                                <span className="text-brand-purple text-base mt-0.5">👤</span>
+                                <span className="text-brand-purple text-base mt-0.5 filter drop-shadow-[0_0_8px_rgba(168,85,247,0.3)]">👤</span>
                                 <div>
                                     <p className="text-white text-xs font-bold">Szervező</p>
                                     <Link 

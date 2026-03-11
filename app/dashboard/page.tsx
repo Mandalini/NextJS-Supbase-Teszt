@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { CustomDateInput } from '@/app/components/FormControls';
 import { usePermissions } from '@/app/hooks/usePermissions';
+import EditableTable from '@/app/components/EditableTable';
 
 export default function DashboardPage() {
     const router = useRouter();
@@ -36,19 +37,8 @@ export default function DashboardPage() {
     // Nézet állapota ('grid' vagy 'table')
     const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
 
-    // Rendezési állapot
-    const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' } | null>({ key: 'date', direction: 'asc' });
-
     // Mobil menü állapota
     const [isMenuOpen, setIsMenuOpen] = useState(false);
-
-    const requestSort = (key: string) => {
-        let direction: 'asc' | 'desc' = 'asc';
-        if (sortConfig && sortConfig.key === key && sortConfig.direction === 'asc') {
-            direction = 'desc';
-        }
-        setSortConfig({ key, direction });
-    };
 
     // Inicializáljuk a nézetet a localStorage-ból, ha van
     useEffect(() => {
@@ -266,28 +256,126 @@ export default function DashboardPage() {
             return matchesSearch && matchesStartDate && matchesEndDate && matchesStatus && matchesOrganizer;
         });
 
-        if (sortConfig !== null) {
-            items.sort((a, b) => {
-                let aValue: any = a[sortConfig.key];
-                let bValue: any = b[sortConfig.key];
-
-                // Speciális esetek pl. nested objects
-                if (sortConfig.key === 'owner') {
-                    aValue = a.owner?.display_name || '';
-                    bValue = b.owner?.display_name || '';
-                }
-
-                if (aValue < bValue) {
-                    return sortConfig.direction === 'asc' ? -1 : 1;
-                }
-                if (aValue > bValue) {
-                    return sortConfig.direction === 'asc' ? 1 : -1;
-                }
-                return 0;
-            });
-        }
         return items;
-    }, [currentDataList, searchQuery, startDate, endDate, statusFilter, organizerFilter, sortConfig]);
+    }, [currentDataList, searchQuery, startDate, endDate, statusFilter, organizerFilter]);
+
+    const tableColumns = [
+        { 
+            key: 'title', 
+            label: 'Cím', 
+            width: 250,
+            render: (val: any, row: any) => (
+                (row.status === 'published' && activeTab === 'attended') ? (
+                    <Link href={`/event/${row.id}`} className="hover:text-gold transition-colors block truncate pr-2">
+                        {row.title}
+                    </Link>
+                ) : (
+                    <Link href={`/dashboard/edit/${row.id}`} className="hover:text-gold transition-colors block truncate pr-2">
+                        {row.title}
+                    </Link>
+                )
+            )
+        },
+        { 
+            key: 'owner', 
+            label: 'Szervező', 
+            width: 150,
+            render: (val: any, row: any) => (
+                <div className="text-[11px] text-gray-300 font-bold uppercase tracking-wider truncate">
+                    {row.owner?.display_name || 'Ismeretlen'}
+                </div>
+            )
+        },
+        { 
+            key: 'date', 
+            label: 'Dátum', 
+            width: 120,
+            render: (val: any, row: any) => (
+                <span className="text-gray-400 whitespace-nowrap font-mono text-[11px]">
+                    {new Date(row.date).toLocaleDateString('hu-HU')}
+                </span>
+            )
+        },
+        { key: 'event_time', label: 'Időpont', width: 90, render: (val: any) => <span className="text-gray-400 text-xs truncate">{val ? val.substring(0, 5) : '-'}</span> },
+        { key: 'category', label: 'Kategória', width: 120, render: (val: any) => <span className="text-gray-400 text-xs truncate bg-black/20 border border-white/10 px-2 py-0.5 rounded-full">{val || '-'}</span> },
+        { key: 'location', label: 'Helyszín', width: 150, render: (val: any) => <span className="text-gray-400 text-xs truncate">{val || '-'}</span> },
+        { key: 'price', label: 'Ár (HUF)', width: 100, render: (val: any) => <span className="text-gray-400 text-xs truncate font-mono">{val === 0 ? 'Ingyenes' : val ? `${val.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ")} Ft` : '-'}</span> },
+        { key: 'capacity', label: 'Férőhely', width: 100, render: (val: any) => <span className="text-gray-400 text-xs truncate">{val ? `${val} fő` : '-'}</span> },
+    ];
+
+    if (activeTab === 'organized') {
+        tableColumns.push(
+            { 
+                key: 'attendees', 
+                label: 'Résztvevők', 
+                width: 100,
+                render: (val: any, row: any) => (
+                    <div className="text-center font-bold text-brand-blue whitespace-nowrap text-xs">
+                        <span className="text-sm mr-1 cursor-pointer hover:text-white transition-colors"
+                              onClick={() => openAttendeesModal(row.id, row.title)} 
+                              title="Kattints a résztvevőkért">👥</span>
+                        {row.event_attendees?.[0]?.count || 0}
+                    </div>
+                )
+            },
+            { 
+                key: 'status', 
+                label: 'Státusz', 
+                width: 100,
+                render: (val: any, row: any) => (
+                    <div className="text-center">
+                        {row.status === 'published' ? (
+                            <span className="bg-brand-blue/20 border border-brand-blue/50 text-brand-blue text-[9px] uppercase tracking-widest px-1.5 py-0.5 rounded-full font-bold shadow-[0_0_10px_var(--color-brand-blue)]">Publikált</span>
+                        ) : row.status === 'cancelled' ? (
+                            <span className="bg-red-900/40 border border-red-600/50 text-red-400 text-[9px] uppercase tracking-widest px-1.5 py-0.5 rounded-full font-bold whitespace-nowrap">Törölt</span>
+                        ) : (
+                            <span className="bg-gray-800 border border-gray-600 text-gray-400 text-[9px] uppercase tracking-widest px-1.5 py-0.5 rounded-full font-bold">Piszkozat</span>
+                        )}
+                    </div>
+                )
+            }
+        );
+    }
+
+    const renderTableActions = (event: any) => {
+        if (activeTab === 'organized') {
+            return (
+                <div className="flex justify-end gap-2">
+                    <Link href={`/dashboard/edit/${event.id}`} title="Szerkesztés" className="p-2 bg-white/5 border border-white/10 rounded-lg text-gold hover:bg-gold hover:text-black transition-all shadow-inner">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg>
+                    </Link>
+                    <button onClick={() => handleDuplicate(event)} title="Másolás" className="p-2 bg-white/5 border border-white/10 rounded-lg text-brand-purple hover:bg-brand-purple hover:text-white transition-all shadow-inner">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2" />
+                        </svg>
+                    </button>
+                    <button onClick={() => handleDelete(event.id)} title="Törlés" className="p-2 bg-white/5 border border-white/10 rounded-lg text-red-400 hover:bg-red-500 hover:text-white transition-all shadow-inner">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                    </button>
+                </div>
+            );
+        } else {
+            return (
+                <div className="flex justify-end gap-2">
+                    <Link href={`/event/${event.id}`} title="Megtekintés" className="p-2 bg-white/5 border border-white/10 rounded-lg text-brand-blue hover:bg-brand-blue hover:text-white transition-all shadow-inner">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                        </svg>
+                    </Link>
+                    <button onClick={() => handleCancelAttendance(event.id)} title="Leiratkozás" className="p-2 bg-white/5 border border-white/10 rounded-lg text-gray-400 hover:bg-white/20 hover:text-white transition-all shadow-inner">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                        </svg>
+                    </button>
+                </div>
+            );
+        }
+    };
 
     if (loading) {
         return <div className="p-8 text-center text-gray-500 glow-text">Adatok betöltése...</div>;
@@ -605,164 +693,18 @@ export default function DashboardPage() {
 
                     {/* TÁBLÁZATOS NÉZET */}
                     {viewMode === 'table' && (
-                        <div className="overflow-x-auto glass-panel rounded-xl glow-border">
-                            <table className="min-w-full divide-y divide-white/10 text-sm table-fixed">
-                                <thead className="bg-black/20">
-                                    <tr>
-                                        <th
-                                            onClick={() => requestSort('title')}
-                                            className="w-[30%] px-2 py-5 text-left font-bold text-brand-blue uppercase tracking-widest text-[10px] cursor-pointer hover:bg-white/5 transition-colors group"
-                                        >
-                                            <div className="flex items-center">
-                                                Cím {sortConfig?.key === 'title' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : <span className="opacity-0 group-hover:opacity-40 ml-1">↕</span>}
-                                            </div>
-                                        </th>
-                                        <th
-                                            onClick={() => requestSort('owner')}
-                                            className="w-[12%] px-2 py-5 text-left font-bold text-brand-blue uppercase tracking-widest text-[10px] cursor-pointer hover:bg-white/5 transition-colors group"
-                                        >
-                                            <div className="flex items-center">
-                                                Szervező {sortConfig?.key === 'owner' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : <span className="opacity-0 group-hover:opacity-40 ml-1">↕</span>}
-                                            </div>
-                                        </th>
-                                        <th
-                                            onClick={() => requestSort('date')}
-                                            className="w-[10%] px-2 py-5 text-left font-bold text-brand-blue uppercase tracking-widest text-[10px] cursor-pointer hover:bg-white/5 transition-colors group"
-                                        >
-                                            <div className="flex items-center">
-                                                Dátum {sortConfig?.key === 'date' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : <span className="opacity-0 group-hover:opacity-40 ml-1">↕</span>}
-                                            </div>
-                                        </th>
-                                        <th
-                                            onClick={() => requestSort('category')}
-                                            className="w-[10%] px-2 py-4 text-left font-bold text-brand-blue uppercase tracking-widest text-[10px] cursor-pointer hover:bg-white/5 transition-colors group"
-                                        >
-                                            <div className="flex items-center">
-                                                Kategória {sortConfig?.key === 'category' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : <span className="opacity-0 group-hover:opacity-40 ml-1">↕</span>}
-                                            </div>
-                                        </th>
-                                        <th
-                                            onClick={() => requestSort('location')}
-                                            className="w-[10%] px-2 py-4 text-left font-bold text-brand-blue uppercase tracking-widest text-[10px] cursor-pointer hover:bg-white/5 transition-colors group"
-                                        >
-                                            <div className="flex items-center">
-                                                Helyszín {sortConfig?.key === 'location' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : <span className="opacity-0 group-hover:opacity-40 ml-1">↕</span>}
-                                            </div>
-                                        </th>
-                                        {activeTab === 'organized' && (
-                                            <>
-                                                <th className="w-[7%] px-2 py-4 text-center font-bold text-brand-blue uppercase tracking-widest text-[10px]">Résztvevők</th>
-                                                <th className="w-[9%] px-2 py-4 text-center font-bold text-brand-blue uppercase tracking-widest text-[10px]">Státusz</th>
-                                            </>
-                                        )}
-                                        <th className="w-[12%] min-w-[120px] px-2 py-4 text-right font-bold text-brand-blue uppercase tracking-widest text-[10px]">Műveletek</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-white/5">
-                                    {filteredEvents.map((event) => (
-                                        <tr key={event.id} className="hover:bg-white/5 transition-colors">
-                                            <td className="px-2 py-4 font-bold text-white max-w-0">
-                                                {(event.status === 'published' && activeTab === 'attended') ? (
-                                                    <Link href={`/event/${event.id}`} className="hover:text-gold transition-colors block truncate pr-2">
-                                                        {event.title}
-                                                    </Link>
-                                                ) : (
-                                                <Link href={`/dashboard/edit/${event.id}`} className="hover:text-gold transition-colors block truncate pr-2">
-                                                    {event.title}
-                                                </Link>
-                                                )}
-                                            </td>
-                                            <td className="px-2 py-4 whitespace-nowrap max-w-0">
-                                                <div className="text-[11px] text-gray-300 font-bold uppercase tracking-wider truncate">{event.owner?.display_name || 'Ismeretlen'}</div>
-                                            </td>
-                                            <td className="px-2 py-4 text-gray-400 whitespace-nowrap font-mono text-[11px]">{new Date(event.date).toLocaleDateString('hu-HU')}</td>
-                                            <td className="px-2 py-4 text-gray-400 text-xs truncate">{event.category || '-'}</td>
-                                            <td className="px-2 py-4 text-gray-400 text-xs truncate">{event.location || '-'}</td>
-
-                                            {activeTab === 'organized' && (
-                                                <>
-                                                    <td className="px-2 py-4 text-center font-bold text-brand-blue whitespace-nowrap text-xs">
-                                                        <span
-                                                            className="text-sm mr-1 cursor-pointer hover:text-white transition-colors"
-                                                            onClick={() => openAttendeesModal(event.id, event.title)}
-                                                            title="Kattints a résztvevőkért"
-                                                        >
-                                                            👥
-                                                        </span>
-                                                        {event.event_attendees?.[0]?.count || 0}
-                                                    </td>
-                                                    <td className="px-2 py-4 text-center">
-                                                        {event.status === 'published' ? (
-                                                            <span className="bg-brand-blue/20 border border-brand-blue/50 text-brand-blue text-[9px] uppercase tracking-widest px-1.5 py-0.5 rounded-full font-bold shadow-[0_0_10px_var(--color-brand-blue)]">Publikált</span>
-                                                        ) : event.status === 'cancelled' ? (
-                                                            <span className="bg-red-900/40 border border-red-600/50 text-red-400 text-[9px] uppercase tracking-widest px-1.5 py-0.5 rounded-full font-bold whitespace-nowrap">Törölt</span>
-                                                        ) : (
-                                                            <span className="bg-gray-800 border border-gray-600 text-gray-400 text-[9px] uppercase tracking-widest px-1.5 py-0.5 rounded-full font-bold">Piszkozat</span>
-                                                        )}
-                                                    </td>
-                                                </>
-                                            )}
-
-                                            <td className="px-2 py-4 text-right whitespace-nowrap min-w-[120px]">
-                                                {activeTab === 'organized' ? (
-                                                    <div className="flex justify-end gap-2">
-                                                        <Link
-                                                            href={`/dashboard/edit/${event.id}`}
-                                                            title="Szerkesztés"
-                                                            className="p-2 bg-white/5 border border-white/10 rounded-lg text-gold hover:bg-gold hover:text-black transition-all group shadow-inner"
-                                                        >
-                                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                                            </svg>
-                                                        </Link>
-                                                        <button
-                                                            onClick={() => handleDuplicate(event)}
-                                                            title="Másolás"
-                                                            className="p-2 bg-white/5 border border-white/10 rounded-lg text-brand-purple hover:bg-brand-purple hover:text-white transition-all shadow-inner"
-                                                        >
-                                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2" />
-                                                            </svg>
-                                                        </button>
-                                                        <button
-                                                            onClick={() => handleDelete(event.id)}
-                                                            title="Törlés"
-                                                            className="p-2 bg-white/5 border border-white/10 rounded-lg text-red-400 hover:bg-red-500 hover:text-white transition-all shadow-inner"
-                                                        >
-                                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                                            </svg>
-                                                        </button>
-                                                    </div>
-                                                ) : (
-                                                    <div className="flex justify-end gap-2">
-                                                        <Link
-                                                            href={`/event/${event.id}`}
-                                                            title="Megtekintés"
-                                                            className="p-2 bg-white/5 border border-white/10 rounded-lg text-brand-blue hover:bg-brand-blue hover:text-white transition-all shadow-inner"
-                                                        >
-                                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                                            </svg>
-                                                        </Link>
-                                                        <button
-                                                            onClick={() => handleCancelAttendance(event.id)}
-                                                            title="Leiratkozás"
-                                                            className="p-2 bg-white/5 border border-white/10 rounded-lg text-gray-400 hover:bg-white/20 hover:text-white transition-all shadow-inner"
-                                                        >
-                                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                                                            </svg>
-                                                        </button>
-                                                    </div>
-                                                )}
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
+                        <EditableTable
+                            data={filteredEvents}
+                            columns={tableColumns}
+                            onSave={async () => {}}
+                            onDelete={async (id) => handleDelete(id as string)}
+                            idField="id"
+                            storageKey="dashboard_events_table"
+                            canEdit={false}
+                            canDelete={false}
+                            customActions={renderTableActions}
+                            actionsPosition="end"
+                        />
                     )}
                 </>
             ) : (
