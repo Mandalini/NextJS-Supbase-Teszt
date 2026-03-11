@@ -100,6 +100,7 @@ Az `app/components/EditableTable.tsx` egy univerzális eszköz a CRUD műveletek
 -   **Background Glow:** Használj `blur-[150px] opacity-20 mix-blend-screen` stílusú köröket a háttérben a cyberpunk hangulathoz.
 -   **Loading States:** Használj `animate-pulse bg-white/5` stílusú skeletonokat a betöltés alatt.
 -   **Reszponzivitás:** Adaptáld a tartalmat a képernyőmérethez (pl. `hidden sm:block`, `hidden lg:inline-block` a hosszú nevekhez).
+-   **Mobil Interaktivitás:** SOHA ne hagyatkozz kizárólag a `hover` állapotra interaktív elemeknél (pl. legördülő menük). Érintőképernyőn a hover nem működik megbízhatóan. Használj React állapotot (`useState`) és `onClick` eseményt a menük nyitásához/zárásához, valamint implementálj „click-outside” figyelőt a kényelmes használatért.
 
 ## 3.5 Adatformátumok & Megjelenítés
 - **Linkek & Címek:** A táblázatokban (és máshol is) a kattintható címek alapszíne fehér (`text-white`), hover esetén arany (`hover:text-gold`), és használjanak `transition-colors` effektet a sima átmenetért. Ne használj kék színt a linkekhez.

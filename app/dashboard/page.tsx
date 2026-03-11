@@ -39,6 +39,9 @@ export default function DashboardPage() {
     // Rendezési állapot
     const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' } | null>({ key: 'date', direction: 'asc' });
 
+    // Mobil menü állapota
+    const [isMenuOpen, setIsMenuOpen] = useState(false);
+
     const requestSort = (key: string) => {
         let direction: 'asc' | 'desc' = 'asc';
         if (sortConfig && sortConfig.key === key && sortConfig.direction === 'asc') {
@@ -59,6 +62,14 @@ export default function DashboardPage() {
         setViewMode(mode);
         localStorage.setItem('eventViewMode', mode);
     };
+
+    // Kattintás kívülre (menü bezárása)
+    useEffect(() => {
+        if (!isMenuOpen) return;
+        const handleClickOutside = () => setIsMenuOpen(false);
+        window.addEventListener('click', handleClickOutside);
+        return () => window.removeEventListener('click', handleClickOutside);
+    }, [isMenuOpen]);
 
     useEffect(() => {
         sessionStorage.setItem('searchQuery', searchQuery);
@@ -304,22 +315,26 @@ export default function DashboardPage() {
                         </Link>
 
                         {/* Hamburger Dropdown / Beállítások */}
-                        <div className="relative group border-l border-white/10 pl-4">
-                            <button className="text-white hover:text-brand-blue transition-colors p-2 rounded-full hover:bg-white/5 flex items-center justify-center">
+                        <div className="relative border-l border-white/10 pl-4">
+                            <button 
+                                onClick={() => setIsMenuOpen(!isMenuOpen)}
+                                className={`text-white transition-colors p-2 rounded-full hover:bg-white/5 flex items-center justify-center ${isMenuOpen ? 'text-gold bg-white/10' : 'hover:text-brand-blue'}`}
+                            >
                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16m-7 6h7" />
                                 </svg>
                             </button>
 
                             {/* Dropdown panel */}
-                            <div className="absolute right-0 mt-2 w-56 bg-black/80 backdrop-blur-xl border border-white/10 rounded-xl shadow-[0_10px_30px_rgba(0,0,0,0.8)] opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 overflow-hidden transform origin-top-right scale-95 group-hover:scale-100">
+                            <div className={`absolute right-0 mt-2 w-56 bg-black/80 backdrop-blur-xl border border-white/10 rounded-xl shadow-[0_10px_30px_rgba(0,0,0,0.8)] transition-all duration-300 overflow-hidden transform origin-top-right z-50
+                                ${isMenuOpen ? 'opacity-100 visible scale-100' : 'opacity-0 invisible scale-95'}`}>
                                 <Link href="/" className="block px-4 py-3 text-sm text-gray-300 hover:text-brand-blue hover:bg-brand-blue/10 border-b border-white/5 transition-colors flex items-center gap-2">
                                     <span className="text-lg">&larr;</span> Kezdőlap
                                 </Link>
                                 {hasPermission('manage_categories') && (
                                     <Link href="/dashboard/categories" className="block px-4 py-3 text-sm text-gray-300 hover:text-gold hover:bg-gold/10 border-b border-white/5 transition-colors flex items-center gap-2 font-bold tracking-widest uppercase text-[10px]">
                                         <span className="text-sm">🏷</span> Kategóriák Kezelése
-                                    </Link>
+                                                                    </Link>
                                 )}
                                 {hasPermission('manage_roles') && (
                                     <Link href="/dashboard/roles" className="block px-4 py-3 text-sm text-gray-300 hover:text-brand-purple hover:bg-brand-purple/10 border-b border-white/5 transition-colors flex items-center gap-2 font-bold tracking-widest uppercase text-[10px]">

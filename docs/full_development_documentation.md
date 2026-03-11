@@ -110,6 +110,7 @@ A Next.js middleware és a Supabase Auth integrációja gondoskodik a nem védet
 
 -   **Responsivity & Table Management:** Bevezetésre került egy pixel-pontos oszlopszélesség kezelés az `EditableTable` komponensben. A táblázat szélessége az oszlopok összegéből adódik, lehetővé téve a stabil vízszintes görgetést. Használható a `truncate` technika, így az oszlopok bármilyen keskenyre összeszűkíthetők a tartalomtól függetlenül.
 -   **Reset Layout:** A felhasználók egyetlen kattintással alaphelyzetbe állíthatják a táblázat elmentett elrendezését (szélesség, sorrend).
+-   **Mobil Optimalizáció:** A vezérlőpult hamburger menüje át lett alakítva tisztán állapot-alapú (`useState`) működésre a korábbi „hover” megoldás helyett, biztosítva a hibátlan működést érintőképernyőkön is. Implementálásra került egy globális kattintás-figyelő is, amely automatikusan bezárja a nyitott menüket a képernyő üres területére bökve.
 -   **Z-index Fixek:** A dátumválasztó és kategória választó panelek mindenhol az elemek felett jelennek meg, nem vágja le őket a táblázat kerete.
 -   **Intelligens Linkek:** Az `EditableTable`-ben a `title` és az URL típusú mezők automatikusan külső hivatkozássá válnak, megkönnyítve az adatok ellenőrzését és a forrásoldalak elérését.
 -   **Univerzális Táblázat:** Az `EditableTable` komponens bevezetésével az adatok kezelése gyorsabbá és átláthatóbbá vált, csökkentve a redundáns kódot.
