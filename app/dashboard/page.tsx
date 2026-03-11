@@ -322,8 +322,13 @@ export default function DashboardPage() {
                                     </Link>
                                 )}
                                 {hasPermission('manage_roles') && (
-                                    <Link href="/dashboard/roles" className="block px-4 py-3 text-sm text-gray-300 hover:text-brand-purple hover:bg-brand-purple/10 transition-colors flex items-center gap-2 font-bold tracking-widest uppercase text-[10px]">
+                                    <Link href="/dashboard/roles" className="block px-4 py-3 text-sm text-gray-300 hover:text-brand-purple hover:bg-brand-purple/10 border-b border-white/5 transition-colors flex items-center gap-2 font-bold tracking-widest uppercase text-[10px]">
                                         <span className="text-sm">👥</span> Felhasználók Kezelése
+                                    </Link>
+                                )}
+                                {hasPermission('edit_any_event') && (
+                                    <Link href="/dashboard/feltoltott-esemenyek" className="block px-4 py-3 text-sm text-gray-300 hover:text-brand-blue hover:bg-brand-blue/10 transition-colors flex items-center gap-2 font-bold tracking-widest uppercase text-[10px]">
+                                        <span className="text-sm">📥</span> Feltöltött események
                                     </Link>
                                 )}
                             </div>
