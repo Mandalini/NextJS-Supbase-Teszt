@@ -1,4 +1,4 @@
-# My Event App - Fejlesztési Dokumentáció v1.0
+# My Event App - Fejlesztési Dokumentáció v1.1
 
 Ez a dokumentum összefoglalja a „My Event App” eseménykezelő rendszer eddigi fejlesztési eredményeit, technikai alapjait és architektúráját. A dokumentum célja, hogy kiindulópontként szolgáljon a jövőbeni fejlesztésekhez és hasonló rendszerek alapkövének tekinthető.
 
@@ -29,6 +29,8 @@ A rendszer alapja egy relációs adatbázis, amely a következő fő táblákbó
 4.  **`event_attendees`**: Kapcsolótábla a résztvevők és események között (ki hova iratkozott fel).
 5.  **`roles` & `permissions`**: Szerepkör alapú hozzáférés-szabályozás (RBAC) törzstáblái.
 6.  **`user_roles` & `role_permissions`**: Kapcsolótáblák, amik összekötik a felhasználókat a szerepkörökkel és az engedélyekkel.
+7.  **`scrape_sources`**: Külső adatforrások (URL, parser típus, státusz) technikai táblája.
+8.  **`soundbath_events`**: Begyűjtött (scraped) eseményadatok tárolója, amelyek még nem kerültek át a végleges `events` táblába.
 
 ### 2.2 Szerepkörök és Jogosultságok (RBAC)
 
@@ -37,6 +39,12 @@ A rendszer három fő szintet különböztet meg:
 -   **Adminisztrátor (Admin):** Teljes hozzáférés. Látja mindenki összes eseményét (piszkozatot, töröltet is), bármit szerkeszthet, törölhet és kategóriákat/jogokat kezelhet.
 -   **Szervező (Organizer):** Létrehozhat saját eseményeket, szerkesztheti azokat. Csak a saját piszkozatait látja, a másokét nem.
 -   **Regisztrált Felhasználó:** Megtekintheti a publikált eseményeket, és jelentkezhet rájuk.
+
+**Dinamikus Jogosultságkezelés:**
+A rendszer támogatja a granuláris jogosultságokat, melyek a „Szerepkör-mátrix” felületen keresztül dinamikusan rendelhetők hozzá bármely szerepkörhöz.
+Újonnan bevezetett jogok:
+-   `view_uploaded_events`: Hozzáférés a „Feltöltött események” oldalhoz.
+-   `manage_uploaded_events`: Szerkesztési és törlési jog az adatok felett.
 
 **Kulcsfontosságú modul:** `app/hooks/usePermissions.ts` – Egy egyedi hook, amely lekéri a bejelentkezett felhasználó jogait, és biztosítja a `hasPermission()` funkciót a UI elemek (gombok, menük) elrejtéséhez/megjelenítéséhez.
 
@@ -70,6 +78,15 @@ A rendszer képes egyidejűleg kezelni több szempontot:
 -   Szervező szerinti szűrés (csak Adminoknak).
 -   *Fontos:* A szűrők állapota megmarad az oldalról való elnavigálás (pl. szerkesztés) után is (`Session Storage`).
 
+### 3.4 Feltöltött Események és Adatkezelés
+Egy speciális adminisztrációs felület (`/dashboard/feltoltott-esemenyek`) a külső adatforrások és a begyűjtött események kezelésére.
+-   **Csoportosított Megjelenítés:** Az események forráskulcs (`source_key`) és státusz (Aktív/Inaktív) szerint bontva jelennek meg.
+-   **EditableTable Komponens:** Egy univerzális, újrafelhasználható táblázat modul, amely az alábbiakat biztosítja:
+    -   *Helybeni szerkesztés:* Excel-szerű gyors adatbevitel.
+    -   *Oszlopok testreszabása:* Draggable sorrend és resizable szélesség, ami felhasználónként elmentődik (`localStorage`).
+    -   *Jogosultság-érzékenység:* Automatikusan elrejti a módosító funkciókat, ha hiányzik a `manage_uploaded_events` jog.
+    -   *Formázás:* Intelligens típuskezelés (Checkboxok, Dátumválasztók, Időformátum `HH:mm`).
+
 ---
 
 ## 4. Biztonság és Adatvédelem
@@ -92,6 +109,7 @@ A Next.js middleware és a Supabase Auth integrációja gondoskodik a nem védet
 -   **Responsivity:** A táblázat oszlopszélességei precízen be lettek állítva (30% Cím, 12% Műveletek stb.), hogy hosszú szövegeknél is megmaradjon az elrendezés (`truncate` és `max-w-0` technikák).
 -   **Z-index Fixek:** A dátumválasztó és kategória választó panelek mindenhol az elemek felett jelennek meg, nem vágja le őket a táblázat kerete.
 -   **Admin Élmény:** Az Admin táblázatban a címek linkszerűen működnek, közvetlenül a szerkesztési oldalra visznek a gyors munkavégzés érdekében.
+-   **Univerzális Táblázat:** Az `EditableTable` komponens bevezetésével az adatok kezelése gyorsabbá és átláthatóbbá vált, csökkentve a redundáns kódot a különböző adatkezelő oldalakon.
 
 ---
 
@@ -105,6 +123,6 @@ Ez az alaprendszer készen áll a bővítésre a következőkkel:
 
 ---
 
-**Lezárva:** 2026. március 7.
+**Lezárva:** 2026. március 11.
 **Készítette:** Antigravity AI Coding Assistant
-**Téma:** Eseményvezérelt App-keretrendszer Alapkő letétel
+**Téma:** Eseményvezérelt App-keretrendszer - Jogosultságok és Adatkezelés bővítése

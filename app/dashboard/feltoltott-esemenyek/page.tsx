@@ -17,8 +17,8 @@ export default function FeltoltottEsemenyekPage() {
     useEffect(() => {
         if (permsLoading) return;
 
-        const canManage = userPermissions.some((p: any) => p.action === 'edit_any_event');
-        if (!canManage) {
+        const canView = userPermissions.some((p: any) => p.action === 'view_uploaded_events');
+        if (!canView) {
             router.push('/dashboard');
             return;
         }
@@ -147,6 +147,8 @@ export default function FeltoltottEsemenyekPage() {
                     idField="id"
                     storageKey="scrape_sources"
                     actionsPosition="start"
+                    canEdit={userPermissions.some((p: any) => p.action === 'manage_uploaded_events')}
+                    canDelete={userPermissions.some((p: any) => p.action === 'manage_uploaded_events')}
                 />
             </section>
 
@@ -170,6 +172,8 @@ export default function FeltoltottEsemenyekPage() {
                                 idField="id"
                                 storageKey={`soundbath_events_${groupKey}`}
                                 actionsPosition="start"
+                                canEdit={userPermissions.some((p: any) => p.action === 'manage_uploaded_events')}
+                                canDelete={userPermissions.some((p: any) => p.action === 'manage_uploaded_events')}
                             />
                         </div>
                     ))}

@@ -31,6 +31,8 @@ interface EditableTableProps {
     storageKey: string;
     loading?: boolean;
     actionsPosition?: 'start' | 'end';
+    canEdit?: boolean;
+    canDelete?: boolean;
 }
 
 export default function EditableTable({
@@ -41,7 +43,9 @@ export default function EditableTable({
     idField,
     storageKey,
     loading,
-    actionsPosition = 'end'
+    actionsPosition = 'end',
+    canEdit = true,
+    canDelete = true
 }: EditableTableProps) {
     const [tableColumns, setTableColumns] = useState<Column[]>(columns);
     const [editingId, setEditingId] = useState<string | number | null>(null);
@@ -211,24 +215,28 @@ export default function EditableTable({
                     </>
                 ) : (
                     <>
-                        <button
-                            onClick={() => startEdit(row)}
-                            className="p-1.5 bg-white/5 border border-white/10 rounded text-gold hover:bg-gold hover:text-black transition-all shadow-inner"
-                            title="Szerkesztés"
-                        >
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                            </svg>
-                        </button>
-                        <button
-                            onClick={() => onDelete(row[idField])}
-                            className="p-1.5 bg-white/5 border border-white/10 rounded text-red-400 hover:bg-red-500 hover:text-white transition-all shadow-inner"
-                            title="Törlés"
-                        >
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                            </svg>
-                        </button>
+                        {canEdit && (
+                            <button
+                                onClick={() => startEdit(row)}
+                                className="p-1.5 bg-white/5 border border-white/10 rounded text-gold hover:bg-gold hover:text-black transition-all shadow-inner"
+                                title="Szerkesztés"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                </svg>
+                            </button>
+                        )}
+                        {canDelete && (
+                            <button
+                                onClick={() => onDelete(row[idField])}
+                                className="p-1.5 bg-white/5 border border-white/10 rounded text-red-400 hover:bg-red-500 hover:text-white transition-all shadow-inner"
+                                title="Törlés"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
+                            </button>
+                        )}
                     </>
                 )}
             </div>
@@ -244,7 +252,7 @@ export default function EditableTable({
             <table className="min-w-full divide-y divide-white/10 text-sm table-fixed">
                 <thead className="bg-black/40">
                     <tr>
-                        {actionsPosition === 'start' && renderActionsHeader()}
+                        {(canEdit || canDelete) && actionsPosition === 'start' && renderActionsHeader()}
                         {tableColumns.map((col, idx) => (
                             <th
                                 key={col.key}
@@ -312,7 +320,7 @@ export default function EditableTable({
                                     </td>
                                 );
                             })}
-                            {actionsPosition === 'end' && renderActions(row)}
+                            {(canEdit || canDelete) && actionsPosition === 'end' && renderActions(row)}
                         </tr>
                     ))}
                 </tbody>
