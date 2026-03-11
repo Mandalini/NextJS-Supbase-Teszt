@@ -4,29 +4,40 @@
 const SUPABASE_URL = 'https://krehiptongtcrofkdhxh.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_X5CoI9656Pze7t-H16UJrQ_IL8crd5s';
 
-const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
 // State
+let supabaseClient = null;
 let events = [];
 
 /**
  * Initialize the application
  */
 async function init() {
-    // 1. Handle URL Parameters
+    console.log('Embed module inicializálása [v5]...');
+    
+    // 1. Initialize Supabase Client if not already done
+    if (!supabaseClient) {
+        if (typeof supabase === 'undefined') {
+            console.error('Supabase library nem található!');
+            showError('Hiba: Az adatbázis könyvtár nem töltődött be.');
+            return;
+        }
+        supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    }
+
+    // 2. Handle URL Parameters
     const urlParams = new URLSearchParams(window.location.search);
     
-    // Skin: default is 'gong' (as requested 'gongakademia')
+    // Skin: default is 'gong'
     const skin = urlParams.get('skin') || 'gong';
     document.body.setAttribute('data-theme', skin);
     
     // Organizer: default is 'all'
     const organizerFilter = urlParams.get('szervező') || urlParams.get('organizer') || null;
 
-    // 2. Fetch Data
+    // 3. Fetch Data
     await fetchEvents(organizerFilter);
 
-    // 3. Render
+    // 4. Render
     renderEvents();
 }
 
@@ -35,30 +46,37 @@ async function init() {
  */
 async function fetchEvents(organizer) {
     try {
-        let query = supabaseClient
-            .from('events')
-            .order('date', { ascending: true });
+        if (!supabaseClient) return;
 
-        // Apply organizer filter if provided
-        if (organizer && organizer.toLowerCase() !== 'all') {
-            query = query
+        // Építsük fel a lekérdezést lépésenként
+        let query;
+        const isFilteringOrganizer = organizer && organizer.toLowerCase() !== 'all';
+
+        // Select meghatározása az inner join alapján
+        if (isFilteringOrganizer) {
+            query = supabaseClient
+                .from('events')
                 .select('*, profile:profiles!events_user_id_fkey!inner(display_name)')
                 .eq('status', 'published')
-                .filter('profile.display_name', 'eq', organizer);
+                .eq('profile.display_name', organizer);
         } else {
-            query = query
+            query = supabaseClient
+                .from('events')
                 .select('*, profile:profiles!events_user_id_fkey(display_name)')
                 .eq('status', 'published');
         }
 
-        const { data, error } = await query;
+        // Rendezés
+        console.log('Lekérdezés indítása...', { organizer, isFilteringOrganizer });
+        const { data, error } = await query.order('date', { ascending: true });
 
         if (error) throw error;
         events = data || [];
+        console.log('Sikeres lekérdezés:', events.length, 'esemény');
         
     } catch (error) {
-        console.error('Hiba az események lekérdezésekor:', error);
-        showError('Nem sikerült betölteni az eseményeket. Próbáld meg később!');
+        console.error('Lekérdezési hiba:', error);
+        showError('Hiba történt az adatok betöltésekor. Frissítsd az oldalt!');
     }
 }
 
@@ -80,6 +98,9 @@ function renderEvents() {
         emptyState.classList.remove('hidden');
         return;
     }
+
+    tableWrapper.classList.remove('hidden');
+    emptyState.classList.add('hidden');
 
     eventsBody.innerHTML = events.map(event => `
         <tr onclick="window.open('/event/${event.id}', '_blank')">
@@ -115,5 +136,9 @@ function showError(message) {
     errorText.textContent = message;
 }
 
-// Start
-init();
+// Ensure the page and libraries are loaded before initializing
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+} else {
+    init();
+}
