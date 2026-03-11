@@ -61,19 +61,49 @@ A konzisztencia érdekében használd az `app/components/FormControls.tsx` kompo
 -   **Navigációs Gombok:** Az oldalak közötti visszalépéshez vagy váltáshoz használt gombok stílusa legyen egységes: `glass-panel`, `px-5 py-2.5`, `rounded-xl`, `text-[10px] uppercase tracking-widest font-bold`, hover esetén `bg-white/10`.
 -   **Akció Gombok:** A fő műveletek (Mentés, Új esemény) használjanak gradienst (`from-gold to-yellow-600` vagy `from-brand-blue to-brand-purple`) és glow árnyékot.
 
-### 3.3 Táblázatos Nézet (Dashboard)
--   **Oszlopszélességek:** Tartsd be a fix arányokat:
-    -   Cím: `w-[30%] max-w-0 truncate`
-    -   Szervező: `w-[12%] max-w-0 truncate`
-    -   Dátum/Kategória/Helyszín: `w-[10%]`
-    -   Műveletek: `w-[12%] min-w-[120px] text-right`
+### 3.3 Táblázatos Nézet & EditableTable
+- **Alapvető fix arányok (ha nem EditableTable-t használsz):**
+    - Cím: `w-[30%] max-w-0 truncate`
+    - Szervező: `w-[12%] max-w-0 truncate`
+    - Dátum/Kategória/Helyszín: `w-[10%]`
+    - Műveletek: `w-[12%] min-w-[120px] text-right`
+- **Dinamikus Táblázatok:** Bonyolultabb admin funkciókhoz használd az `EditableTable` komponenst.
+
+### 3.6 EditableTable Komponens
+Az `app/components/EditableTable.tsx` egy univerzális eszköz a CRUD műveletek és az adatkezelés megkönnyítésére.
+
+**Főbb Interakciók:**
+- **Rendezés:** Kattints bármelyik oszlop fejlécére a rendezéshez (Növekvő -> Csökkenő -> Eredeti). Az aktív rendezést arany szín és nyíl jelzi.
+- **Oszlopok mozgatása:** A fejléceket megfogva és áthúzva (Drag & Drop) tetszőlegesen módosítható az oszlopok sorrendje.
+- **Átméretezés:** Az oszlopok jobb szélén található fogantyúval módosítható a szélesség.
+- **Perzisztencia:** Minden layout módosítás (szélesség, sorrend) automatikusan mentődik a `localStorage`-ba a megadott `storageKey` alapján.
+
+**Használat (Props):**
+- `data`: Megjelenítendő adatok tömbje.
+- `columns`: Oszlopdefiníciók (`key`, `label`, `width`, `editable`, `type`).
+- `idField`: Ez az egyedi azonosító a táblában (pl. 'id').
+- `storageKey`: Egyedi kulcs a táblázat beállításainak mentéséhez.
+- `onSave`: Callback függvény a mentéshez (`(row) => Promise<void>`).
+- `onDelete`: Callback függvény a törléshez.
+- `actionsPosition`: A műveletek oszlop helye (`start` vagy `end`).
+
+**Adatformátumok & Megjelenítés (Standardok):**
+- **Dátumformátum:** `YYYY.MM.DD` (vagy a Supabase-ból érkező `YYYY-MM-DD`).
+- **Időformátum:** `HH:mm` (a másodperceket el kell rejteni a UI-on, használd a `type: 'time'` beállítást).
+- **Boolean megjelenítés:** `✅` az igaz, `❌` a hamis értékekhez.
+- **Kiemelés:** Ha a sor objektumban `highlight: true` szerepel, a sor szövege arany és félkövér lesz.
 
 ### 3.4 Látványelemek & Reszponzivitás
 -   **Background Glow:** Használj `blur-[150px] opacity-20 mix-blend-screen` stílusú köröket a háttérben a cyberpunk hangulathoz.
 -   **Loading States:** Használj `animate-pulse bg-white/5` stílusú skeletonokat a betöltés alatt.
 -   **Reszponzivitás:** Adaptáld a tartalmat a képernyőmérethez (pl. `hidden sm:block`, `hidden lg:inline-block` a hosszú nevekhez).
 
-## 4. Szabályok a fejlesztőnek (AI)
+## 3.5 Adatformátumok & Megjelenítés
+- **Dátumformátum:** `YYYY.MM.DD` (vagy a Supabase-ból érkező `YYYY-MM-DD`).
+- **Időformátum:** `HH:mm` (a másodperceket a legtöbb helyen el kell rejteni a UI-on).
+- **Boolean megjelenítés:** `✅` az igaz, `❌` a hamis értékekhez.
+- **Táblázat adatok:** Ha az adat hiányzik, használj `-` jelet.
+- **Kiemelés:** A táblázatokban a `highlight: true` tulajdonságú sorok használják a `text-gold font-bold` stílust.
 
 1.  **SOHA** ne használj hardcoded hex színeket! Mindig a `var(...)` változókat használd (lásd 1. fejezet).
 2.  **MINDIG** ellenőrizd a hover effekteket (`transition-all duration-300`).

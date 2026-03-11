@@ -1,6 +1,18 @@
+/**
+ * EditableTable.tsx
+ * Célja: Egy univerzális, újrafelhasználható táblázat komponens, amely lehetővé teszi 
+ * az adatbázis táblák (pl. scrape_sources, soundbath_events) kényelmes kezelését.
+ * Főbb funkciók:
+ * - Helyben történő (inline) szerkesztés, mentés és törlés.
+ * - Oszlopok átméretezése (resizable) és sorrendjének változtatása (drag & drop).
+ * - Beállítások (szélesség, sorrend) automatikus mentése a localStorage-ba.
+ * - Rendezés az oszlopfejlécekre kattintva.
+ * - Glassmorphism design a projekt stílusához igazodva.
+ */
+
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 
 interface Column {
     key: string;
@@ -35,6 +47,9 @@ export default function EditableTable({
     const [editingId, setEditingId] = useState<string | number | null>(null);
     const [editData, setEditData] = useState<any>(null);
     const [isSaving, setIsSaving] = useState(false);
+    const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' | null }>({ key: '', direction: null });
+    const [draggedIdx, setDraggedIdx] = useState<number | null>(null);
+    
     const resizerRef = useRef<{ index: number; startWidth: number; startX: number } | null>(null);
 
     // Initialize columns from localStorage
@@ -44,13 +59,11 @@ export default function EditableTable({
             try {
                 const settings = JSON.parse(saved);
                 if (settings.columns) {
-                    // Merge saved widths/order with current columns to handle schema changes
                     const merged = settings.columns.map((savedCol: any) => {
                         const original = columns.find(c => c.key === savedCol.key);
                         return original ? { ...original, width: savedCol.width } : null;
                     }).filter(Boolean);
                     
-                    // Add any new columns not in saved settings
                     const missing = columns.filter(c => !settings.columns.find((sc: any) => sc.key === c.key));
                     setTableColumns([...merged, ...missing]);
                 }
@@ -69,7 +82,54 @@ export default function EditableTable({
         localStorage.setItem(`table_settings_${storageKey}`, JSON.stringify(settings));
     };
 
+    // Sorting Logic
+    const sortedData = useMemo(() => {
+        if (!sortConfig.key || !sortConfig.direction) return data;
+
+        return [...data].sort((a, b) => {
+            const aVal = a[sortConfig.key];
+            const bVal = b[sortConfig.key];
+
+            if (aVal === bVal) return 0;
+            if (aVal === null || aVal === undefined) return 1;
+            if (bVal === null || bVal === undefined) return -1;
+
+            const comparison = aVal < bVal ? -1 : 1;
+            return sortConfig.direction === 'asc' ? comparison : -comparison;
+        });
+    }, [data, sortConfig]);
+
+    const handleSort = (key: string) => {
+        let direction: 'asc' | 'desc' | null = 'asc';
+        if (sortConfig.key === key && sortConfig.direction === 'asc') direction = 'desc';
+        else if (sortConfig.key === key && sortConfig.direction === 'desc') direction = null;
+        
+        setSortConfig({ key, direction });
+    };
+
+    // Column Reordering (Drag & Drop)
+    const handleDragStart = (idx: number) => {
+        setDraggedIdx(idx);
+    };
+
+    const handleDragOver = (e: React.DragEvent, idx: number) => {
+        e.preventDefault();
+    };
+
+    const handleDrop = (targetIdx: number) => {
+        if (draggedIdx === null || draggedIdx === targetIdx) return;
+        
+        const newCols = [...tableColumns];
+        const [movedCol] = newCols.splice(draggedIdx, 1);
+        newCols.splice(targetIdx, 0, movedCol);
+        
+        setTableColumns(newCols);
+        saveSettings(newCols);
+        setDraggedIdx(null);
+    };
+
     const handleResizeStart = (e: React.MouseEvent, index: number) => {
+        e.stopPropagation();
         e.preventDefault();
         resizerRef.current = {
             index,
@@ -188,13 +248,26 @@ export default function EditableTable({
                         {tableColumns.map((col, idx) => (
                             <th
                                 key={col.key}
+                                draggable
+                                onDragStart={() => handleDragStart(idx)}
+                                onDragOver={(e) => handleDragOver(e, idx)}
+                                onDrop={() => handleDrop(idx)}
                                 style={{ width: col.width ? `${col.width}px` : 'auto' }}
-                                className="relative px-4 py-4 text-left font-bold text-brand-blue uppercase tracking-widest text-[10px] group"
+                                className={`relative px-4 py-4 text-left font-bold uppercase tracking-widest text-[10px] group cursor-move select-none transition-colors
+                                    ${sortConfig.key === col.key ? 'text-gold' : 'text-brand-blue'}
+                                    ${draggedIdx === idx ? 'opacity-30' : 'opacity-100'}
+                                    hover:bg-white/5`}
+                                onClick={() => handleSort(col.key)}
                             >
-                                {col.label}
+                                <div className="flex items-center gap-1">
+                                    {col.label}
+                                    {sortConfig.key === col.key && (
+                                        <span>{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>
+                                    )}
+                                </div>
                                 <div
                                     onMouseDown={(e) => handleResizeStart(e, idx)}
-                                    className="absolute right-0 top-0 h-full w-1 cursor-col-resize hover:bg-brand-blue/50 transition-colors"
+                                    className="absolute right-0 top-0 h-full w-1 cursor-col-resize hover:bg-brand-blue/50 transition-colors z-10"
                                 />
                             </th>
                         ))}
@@ -202,7 +275,7 @@ export default function EditableTable({
                     </tr>
                 </thead>
                 <tbody className="divide-y divide-white/5">
-                    {data.map((row) => (
+                    {sortedData.map((row) => (
                         <tr key={row[idField]} className="hover:bg-white/5 transition-colors group">
                             {actionsPosition === 'start' && renderActions(row)}
                             {tableColumns.map((col) => {
