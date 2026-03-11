@@ -1,47 +1,43 @@
 /* public/embed/style.css */
 
 :root {
-    --background: #0b101e;
-    --foreground: #e2e8f0;
-    --color-brand-gold: #ffc107;
-    --color-brand-blue: #5b42ff;
-    --color-brand-purple: #9d4edd;
+    --background: #ffffff;
+    --foreground: #1e293b;
+    --secondary-text: #64748b;
+    --border-color: #e2e8f0;
+    --row-hover: #f8fafc;
+    
+    --color-brand-gold: #b45309;
+    --color-brand-blue: #2563eb;
+    --color-brand-purple: #7c3aed;
 }
 
-/* 1. Skin: Sötétzöld */
+/* 1. Skin: Sötétzöld (Light version) */
 [data-theme="green"] {
-    --background: #051810;
-    --foreground: #d1fae5;
-    --color-brand-gold: #10b981;
-    --color-brand-blue: #059669;
-    --color-brand-purple: #047857;
+    --color-brand-gold: #059669;
+    --color-brand-blue: #10b981;
+    --color-brand-purple: #065f46;
 }
 
-/* 2. Skin: Gong Akadémia (Mély Bordó & Arany) */
+/* 2. Skin: Gong Akadémia (Elegant Light) */
 [data-theme="gong"], [data-theme="gongakademia"] {
-    --background: #140505;
-    --foreground: #fde8e8;
-    --color-brand-gold: #d2b48c;
-    --color-brand-blue: #a80000;
-    --color-brand-purple: #5c0000;
+    --color-brand-gold: #92400e; /* Arany/Barna */
+    --color-brand-blue: #991b1b; /* Bordó */
+    --color-brand-purple: #7f1d1d; /* Mélyebb bordó */
 }
 
-/* 3. Skin: Rezgések Háza */
+/* 3. Skin: Rezgések Háza (Warm Light) */
 [data-theme="rezgesekhaza"] {
-    --background: #3c2415;
-    --foreground: #ffeee0;
-    --color-brand-gold: #ff8c42;
-    --color-brand-blue: #d94b2b;
-    --color-brand-purple: #852e1c;
+    --color-brand-gold: #c2410c;
+    --color-brand-blue: #ea580c;
+    --color-brand-purple: #9a3412;
 }
 
-/* 4. Skin: Modern Cyberpunk */
+/* 4. Skin: Modern Cyberpunk (Refined Light) */
 [data-theme="cyberpunk"] {
-    --background: #09090b;
-    --foreground: #f0fdfa;
-    --color-brand-gold: #f43f5e;
-    --color-brand-blue: #0ea5e9;
-    --color-brand-purple: #8b5cf6;
+    --color-brand-gold: #e11d48;
+    --color-brand-blue: #0284c7;
+    --color-brand-purple: #9333ea;
 }
 
 * {
@@ -51,14 +47,14 @@
 }
 
 body {
-    background-color: transparent; /* WordPress-ben jobb a transzparens, ha containerben van */
+    background-color: transparent;
     color: var(--foreground);
-    font-family: 'Inter', sans-serif;
-    line-height: 1.5;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    line-height: 1.6;
 }
 
 #event-app-root {
-    padding: 20px;
+    padding: 10px;
     max-width: 1200px;
     margin: 0 auto;
 }
@@ -67,21 +63,14 @@ body {
     display: none !important;
 }
 
-/* Glassmorphism */
+/* Elegant Panel */
 .glass-panel {
-    background: rgba(11, 16, 30, 0.8);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(226, 232, 240, 0.1);
-    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
-    border-radius: 1rem;
+    background: #ffffff;
+    border: 1px solid var(--border-color);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+    border-radius: 0.75rem;
     overflow: hidden;
 }
-
-[data-theme="green"] .glass-panel { background: rgba(5, 24, 16, 0.8); }
-[data-theme="gong"] .glass-panel, [data-theme="gongakademia"] .glass-panel { background: rgba(20, 5, 5, 0.8); }
-[data-theme="rezgesekhaza"] .glass-panel { background: rgba(60, 36, 21, 0.8); }
-[data-theme="cyberpunk"] .glass-panel { background: rgba(9, 9, 11, 0.8); }
 
 /* Table Styling */
 .table-wrapper {
@@ -92,56 +81,75 @@ table {
     width: 100%;
     border-collapse: collapse;
     text-align: left;
-    font-size: 0.875rem;
+    font-size: 0.9375rem;
 }
 
 thead {
-    background: rgba(0, 0, 0, 0.4);
+    background: #f8fafc;
 }
 
 th {
-    padding: 1.25rem 1.5rem;
-    font-weight: 700;
+    padding: 1rem 1.5rem;
+    font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: 0.1em;
-    font-size: 0.625rem;
-    color: var(--color-brand-blue);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    letter-spacing: 0.05em;
+    font-size: 0.75rem;
+    color: var(--secondary-text);
+    border-bottom: 2px solid var(--border-color);
 }
 
 td {
-    padding: 1.25rem 1.5rem;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid var(--border-color);
+    vertical-align: middle;
+}
+
+tr:last-child td {
+    border-bottom: none;
+}
+
+tr {
+    cursor: pointer;
+    transition: background-color 0.2s ease;
 }
 
 tr:hover {
-    background: rgba(255, 255, 255, 0.05);
+    background: var(--row-hover);
 }
 
 .event-title {
-    font-weight: 700;
-    color: #fff;
+    font-weight: 600;
+    color: var(--foreground);
     font-size: 1rem;
+    line-height: 1.4;
 }
 
-.event-date, .event-location {
-    color: #94a3b8;
-    font-family: monospace;
-    font-size: 0.75rem;
+.event-date {
+    color: var(--secondary-text);
+    font-size: 0.875rem;
+    white-space: nowrap;
+}
+
+.event-location {
+    color: var(--secondary-text);
+    font-size: 0.875rem;
 }
 
 .category-tag {
-    background: rgba(91, 66, 255, 0.2);
-    border: 1px solid rgba(91, 66, 255, 0.5);
+    background: rgba(37, 99, 235, 0.08); /* Derived from --color-brand-blue */
     color: var(--color-brand-blue);
-    padding: 0.25rem 0.5rem;
-    border-radius: 9999px;
-    font-size: 0.625rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
+    padding: 0.25rem 0.75rem;
+    border-radius: 2rem;
+    font-size: 0.75rem;
+    font-weight: 600;
     white-space: nowrap;
 }
+
+/* Theme specific tag colors */
+[data-theme="green"] .category-tag { background: rgba(16, 185, 129, 0.08); color: var(--color-brand-blue); }
+[data-theme="gong"] .category-tag, [data-theme="gongakademia"] .category-tag { background: rgba(153, 27, 27, 0.08); color: var(--color-brand-blue); }
+[data-theme="rezgesekhaza"] .category-tag { background: rgba(234, 88, 12, 0.08); color: var(--color-brand-blue); }
+[data-theme="cyberpunk"] .category-tag { background: rgba(147, 51, 234, 0.08); color: var(--color-brand-purple); }
 
 .text-right {
     text-align: right;
@@ -150,21 +158,14 @@ tr:hover {
 .btn-details {
     display: inline-block;
     color: var(--color-brand-gold);
-    background: rgba(255, 193, 7, 0.1);
-    border: 1px solid rgba(255, 193, 7, 0.3);
-    padding: 0.5rem 1rem;
-    border-radius: 9999px;
-    font-size: 0.625rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
+    font-size: 0.8125rem;
+    font-weight: 600;
     text-decoration: none;
-    transition: all 0.3s ease;
+    transition: transform 0.2s ease;
 }
 
-.btn-details:hover {
-    background: rgba(255, 193, 7, 0.3);
-    color: #fff;
+tr:hover .btn-details {
+    transform: translateX(4px);
 }
 
 /* Loader */
@@ -175,16 +176,16 @@ tr:hover {
     justify-content: center;
     padding: 4rem;
     gap: 1rem;
-    color: #94a3b8;
+    color: var(--secondary-text);
 }
 
 .loader {
-    width: 40px;
-    height: 40px;
-    border: 3px solid rgba(255, 255, 255, 0.1);
+    width: 32px;
+    height: 32px;
+    border: 3px solid #f1f5f9;
     border-top-color: var(--color-brand-blue);
     border-radius: 50%;
-    animation: spin 1s linear infinite;
+    animation: spin 0.8s linear infinite;
 }
 
 @keyframes spin {
@@ -194,26 +195,27 @@ tr:hover {
 /* Empty State */
 .empty-container {
     text-align: center;
-    padding: 6rem 2rem;
+    padding: 5rem 2rem;
+    color: var(--secondary-text);
 }
 
 .empty-icon {
-    font-size: 3.75rem;
-    opacity: 0.2;
+    font-size: 3rem;
+    opacity: 0.3;
     display: block;
-    margin-bottom: 1.5rem;
+    margin-bottom: 1rem;
 }
 
 .highlight {
-    color: var(--color-brand-gold);
-    font-weight: 700;
+    color: var(--color-brand-blue);
+    font-weight: 600;
 }
 
 /* Error State */
 .error-container {
     text-align: center;
-    padding: 4rem 2rem;
-    color: #ef4444;
+    padding: 3rem 2rem;
+    color: #dc2626;
 }
 
 .error-icon {

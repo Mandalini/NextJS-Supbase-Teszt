@@ -103,7 +103,7 @@ function renderEvents() {
     emptyState.classList.add('hidden');
 
     eventsBody.innerHTML = events.map(event => `
-        <tr onclick="window.open('/event/${event.id}', '_blank')">
+        <tr onclick="window.location.href = '/event/${event.id}'">
             <td>
                 <div class="event-title">${event.title}</div>
             </td>
@@ -117,7 +117,7 @@ function renderEvents() {
                 <div class="event-location">${event.location || '-'}</div>
             </td>
             <td class="text-right">
-                <a href="/event/${event.id}" class="btn-details" target="_blank" onclick="event.stopPropagation()">Részletek &rarr;</a>
+                <a href="/event/${event.id}" class="btn-details" onclick="event.stopPropagation()">Részletek &rarr;</a>
             </td>
         </tr>
     `).join('');
