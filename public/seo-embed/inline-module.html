@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eseménynaptár - Inline SEO Modul</title>
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Supabase Client -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <style>
+        /* CSS Variables & Project Skins (Light Redesign v5) */
+        :root {
+            --background: #ffffff;
+            --foreground: #1e293b;
+            --secondary-text: #64748b;
+            --border-color: #e2e8f0;
+            --row-hover: #f8fafc;
+            --color-brand-gold: #b45309;
+            --color-brand-blue: #2563eb;
+            --color-brand-purple: #7c3aed;
+        }
+
+        /* Skin: Green */
+        [data-theme="green"] {
+            --color-brand-gold: #059669;
+            --color-brand-blue: #10b981;
+            --color-brand-purple: #065f46;
+        }
+
+        /* Skin: Gong Akadémia */
+        [data-theme="gong"], [data-theme="gongakademia"] {
+            --color-brand-gold: #92400e;
+            --color-brand-blue: #991b1b;
+            --color-brand-purple: #7f1d1d;
+        }
+
+        /* Skin: Rezgések Háza */
+        [data-theme="rezgesekhaza"] {
+            --color-brand-gold: #c2410c;
+            --color-brand-blue: #ea580c;
+            --color-brand-purple: #9a3412;
+        }
+
+        /* Skin: Cyberpunk */
+        [data-theme="cyberpunk"] {
+            --color-brand-gold: #e11d48;
+            --color-brand-blue: #0284c7;
+            --color-brand-purple: #9333ea;
+        }
+
+        #seo-event-root {
+            font-family: 'Inter', sans-serif;
+            color: var(--foreground);
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+        }
+
+        .seo-panel {
+            background: #ffffff;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+            border-radius: 0.75rem;
+            overflow: hidden;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .seo-table-wrapper {
+            overflow-x: auto;
+        }
+
+        .seo-table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            font-size: 0.9375rem;
+        }
+
+        .seo-table thead {
+            background: #f8fafc;
+        }
+
+        .seo-table th {
+            padding: 1rem 1.5rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            font-size: 0.75rem;
+            color: var(--secondary-text);
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        .seo-table td {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid var(--border-color);
+            vertical-align: middle;
+        }
+
+        .seo-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .seo-table tr {
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+
+        .seo-table tr:hover {
+            background: var(--row-hover);
+        }
+
+        .seo-event-title {
+            font-weight: 600;
+            color: var(--foreground);
+            font-size: 1rem;
+            line-height: 1.4;
+        }
+
+        .seo-event-date {
+            color: var(--secondary-text);
+            font-size: 0.875rem;
+            white-space: nowrap;
+        }
+
+        .seo-category-tag {
+            background: rgba(37, 99, 235, 0.08);
+            color: var(--color-brand-blue);
+            padding: 0.25rem 0.75rem;
+            border-radius: 2rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .seo-btn-details {
+            display: inline-block;
+            color: var(--color-brand-gold);
+            font-size: 0.8125rem;
+            font-weight: 600;
+            text-decoration: none;
+            transition: transform 0.2s ease;
+        }
+
+        .seo-table tr:hover .seo-btn-details {
+            transform: translateX(4px);
+        }
+
+        /* Statuses */
+        .seo-hidden { display: none !important; }
+        
+        .seo-loader-container, .seo-empty-container, .seo-error-container {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: var(--secondary-text);
+        }
+
+        .seo-loader {
+            width: 32px; height: 32px;
+            border: 3px solid #f1f5f9;
+            border-top-color: var(--color-brand-blue);
+            border-radius: 50%;
+            animation: seo-spin 0.8s linear infinite;
+            margin: 0 auto 1rem;
+        }
+
+        @keyframes seo-spin { to { transform: rotate(360deg); } }
+
+        .seo-highlight { color: var(--color-brand-blue); font-weight: 600; }
+    </style>
+</head>
+<body>
+
+<!-- 
+    ====== BEÁLLÍTÁSOK ======
+    Az alábbi <div> paramétereivel tudod beállítani, hogy mit mutasson a modul:
+    - data-skin : "gongakademia", "green", "rezgesekhaza", "cyberpunk"
+    - data-organizer : "Rezgések Kapu Őre" (vagy töröld ki az attribútumot, ha az összeset akarod látni)
+-->
+<div id="seo-event-root" data-skin="gongakademia" data-organizer="Rezgések Kapu Őre">
+    <div id="seo-loader" class="seo-loader-container">
+        <div class="seo-loader"></div>
+        <p>Események betöltése...</p>
+    </div>
+
+    <div id="seo-error-message" class="seo-error-container seo-hidden">
+        <p>Hiba történt az adatok betöltésekor. Frissítsd az oldalt!</p>
+    </div>
+
+    <div id="seo-content" class="seo-panel seo-hidden">
+        <div class="seo-table-wrapper">
+            <table class="seo-table">
+                <thead>
+                    <tr>
+                        <th>Cím</th>
+                        <th>Dátum</th>
+                        <th>Kategória</th>
+                        <th>Helyszín</th>
+                        <th style="text-align: right">Műveletek</th>
+                    </tr>
+                </thead>
+                <tbody id="seo-events-body">
+                    <!-- Events will be injected here -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div id="seo-empty-state" class="seo-empty-container seo-hidden">
+        <span style="font-size: 3rem; opacity: 0.3;">📅</span>
+        <p>Jelenleg nincs publikus esemény ebben a kategóriában.</p>
+        <p>Térj vissza <span class="seo-highlight">később</span>!</p>
+    </div>
+</div>
+
+<!-- Structured Data Container (SEO) -->
+<div id="seo-json-ld-container"></div>
+
+<script>
+    (function() {
+        // Configuration
+        const SUPABASE_URL = 'https://krehiptongtcrofkdhxh.supabase.co';
+        const SUPABASE_ANON_KEY = 'sb_publishable_X5CoI9656Pze7t-H16UJrQ_IL8crd5s';
+        
+        let supabaseClient = null;
+        let events = [];
+
+        async function init() {
+            console.log('SEO Inline Modul betöltése...');
+            
+            // 1. Initialize Client
+            if (typeof supabase === 'undefined') {
+                showError('Adatbázis hiba');
+                return;
+            }
+            supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+            // 2. Parameters
+            const urlParams = new URLSearchParams(window.location.search);
+            const rootElement = document.getElementById('seo-event-root');
+            
+            // Skin: priority -> 1. HTML data-skin, 2. URL param, 3. 'gongakademia'
+            const skin = rootElement.getAttribute('data-skin') || urlParams.get('skin') || 'gongakademia';
+            
+            // Biztonságosabb a root elemre tenni a data-theme-t a body helyett!
+            rootElement.setAttribute('data-theme', skin);
+            
+            // Organizer: priority -> 1. HTML data-organizer, 2. URL param, 3. all
+            let organizer = rootElement.getAttribute('data-organizer');
+            if (!organizer || organizer.trim() === '') {
+                organizer = urlParams.get('szervező') || urlParams.get('organizer') || null;
+            }
+
+            // 3. Fetch
+            await fetchEvents(organizer);
+
+            // 4. Render
+            renderEvents();
+            
+            // 5. SEO optimization
+            generateStructuredData();
+        }
+
+        async function fetchEvents(organizer) {
+            try {
+                let query;
+                const isFiltering = organizer && organizer.toLowerCase() !== 'all';
+
+                if (isFiltering) {
+                    query = supabaseClient
+                        .from('events')
+                        .select('*, profile:profiles!events_user_id_fkey!inner(display_name)')
+                        .eq('status', 'published')
+                        .eq('profile.display_name', organizer);
+                } else {
+                    query = supabaseClient
+                        .from('events')
+                        .select('*, profile:profiles!events_user_id_fkey(display_name)')
+                        .eq('status', 'published');
+                }
+
+                const { data, error } = await query.order('date', { ascending: true });
+                if (error) throw error;
+                events = data || [];
+            } catch (e) {
+                console.error(e);
+                showError();
+            }
+        }
+
+        function renderEvents() {
+            const loader = document.getElementById('seo-loader');
+            const content = document.getElementById('seo-content');
+            const body = document.getElementById('seo-events-body');
+            const empty = document.getElementById('seo-empty-state');
+
+            loader.classList.add('seo-hidden');
+            
+            if (events.length === 0) {
+                empty.classList.remove('seo-hidden');
+                return;
+            }
+
+            content.classList.remove('seo-hidden');
+            body.innerHTML = events.map(event => `
+                <tr onclick="window.location.href = '/event/${event.id}'">
+                    <td><div class="seo-event-title">${event.title}</div></td>
+                    <td><div class="seo-event-date">${new Date(event.date).toLocaleDateString('hu-HU')}</div></td>
+                    <td><span class="seo-category-tag">${event.category || '-'}</span></td>
+                    <td><div class="seo-event-location" style="color: var(--secondary-text)">${event.location || '-'}</div></td>
+                    <td style="text-align: right">
+                        <a href="/event/${event.id}" class="seo-btn-details" onclick="event.stopPropagation()">Részletek &rarr;</a>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        /**
+         * SEO & GEO: Dynamic JSON-LD (Schema.org)
+         */
+        function generateStructuredData() {
+            if (!events.length) return;
+
+            const schemaData = events.map(event => ({
+                "@context": "https://schema.org",
+                "@type": "Event",
+                "name": event.title,
+                "startDate": event.date,
+                "location": {
+                    "@type": "Place",
+                    "name": event.location || "TBD",
+                    "address": {
+                        "@type": "PostalAddress",
+                        "addressLocality": event.location || "Hungary"
+                    }
+                },
+                "description": event.description || event.title,
+                "url": window.location.origin + "/event/" + event.id
+            }));
+
+            const script = document.createElement('script');
+            script.type = 'application/ld+json';
+            script.text = JSON.stringify(schemaData);
+            document.getElementById('seo-json-ld-container').appendChild(script);
+        }
+
+        function showError(msg) {
+            document.getElementById('seo-loader').classList.add('seo-hidden');
+            document.getElementById('seo-error-message').classList.remove('seo-hidden');
+        }
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', init);
+        } else {
+            init();
+        }
+    })();
+</script>
+
+</body>
+</html>
