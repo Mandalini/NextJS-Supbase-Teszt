@@ -83,7 +83,9 @@ Egy speciális adminisztrációs felület (`/dashboard/feltoltott-esemenyek`) a 
 -   **Csoportosított Megjelenítés:** Az események forráskulcs (`source_key`) és státusz (Aktív/Inaktív) szerint bontva jelennek meg.
 -   **EditableTable Komponens:** Egy univerzális, újrafelhasználható táblázat modul, amely az alábbiakat biztosítja:
     -   *Helybeni szerkesztés:* Excel-szerű gyors adatbevitel.
-    -   *Oszlopok testreszabása:* Draggable sorrend és resizable szélesség, ami felhasználónként elmentődik (`localStorage`).
+    -   *Oszlopok testreszabása:* Draggable sorrend és javított, resizable szélesség kezelés (stale closure bug fix), ami felhasználónként elmentődik (`localStorage`).
+    -   *Reset Funkció:* Az elrendezés bármikor alaphelyzetbe állítható egy dedikált gomb segítségével, ami törli a mentett beállításokat.
+    -   *Gyors Navigáció:* A „Cím” (title) oszlop intelligens linkként működik: automatikusan megnyitja az esemény forrását (`event_url`) egy új ablakban. Hasonlóan, minden URL típusú mező közvetlenül kattintható.
     -   *Jogosultság-érzékenység:* Automatikusan elrejti a módosító funkciókat, ha hiányzik a `manage_uploaded_events` jog.
     -   *Formázás:* Intelligens típuskezelés (Checkboxok, Dátumválasztók, Időformátum `HH:mm`).
 
@@ -106,10 +108,11 @@ A Next.js middleware és a Supabase Auth integrációja gondoskodik a nem védet
 
 ## 5. Legutóbbi Optimalizációk
 
--   **Responsivity:** A táblázat oszlopszélességei precízen be lettek állítva (30% Cím, 12% Műveletek stb.), hogy hosszú szövegeknél is megmaradjon az elrendezés (`truncate` és `max-w-0` technikák).
+-   **Responsivity & Table Management:** Bevezetésre került egy pixel-pontos oszlopszélesség kezelés az `EditableTable` komponensben. A táblázat szélessége az oszlopok összegéből adódik, lehetővé téve a stabil vízszintes görgetést. Használható a `truncate` technika, így az oszlopok bármilyen keskenyre összeszűkíthetők a tartalomtól függetlenül.
+-   **Reset Layout:** A felhasználók egyetlen kattintással alaphelyzetbe állíthatják a táblázat elmentett elrendezését (szélesség, sorrend).
 -   **Z-index Fixek:** A dátumválasztó és kategória választó panelek mindenhol az elemek felett jelennek meg, nem vágja le őket a táblázat kerete.
--   **Admin Élmény:** Az Admin táblázatban a címek linkszerűen működnek, közvetlenül a szerkesztési oldalra visznek a gyors munkavégzés érdekében.
--   **Univerzális Táblázat:** Az `EditableTable` komponens bevezetésével az adatok kezelése gyorsabbá és átláthatóbbá vált, csökkentve a redundáns kódot a különböző adatkezelő oldalakon.
+-   **Intelligens Linkek:** Az `EditableTable`-ben a `title` és az URL típusú mezők automatikusan külső hivatkozássá válnak, megkönnyítve az adatok ellenőrzését és a forrásoldalak elérését.
+-   **Univerzális Táblázat:** Az `EditableTable` komponens bevezetésével az adatok kezelése gyorsabbá és átláthatóbbá vált, csökkentve a redundáns kódot.
 
 ---
 

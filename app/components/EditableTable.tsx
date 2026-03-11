@@ -55,6 +55,12 @@ export default function EditableTable({
     const [draggedIdx, setDraggedIdx] = useState<number | null>(null);
     
     const resizerRef = useRef<{ index: number; startWidth: number; startX: number } | null>(null);
+    const columnsRef = useRef<Column[]>(tableColumns);
+
+    // Sync ref with state for use in event listeners
+    useEffect(() => {
+        columnsRef.current = tableColumns;
+    }, [tableColumns]);
 
     // Initialize columns from localStorage
     useEffect(() => {
@@ -65,7 +71,8 @@ export default function EditableTable({
                 if (settings.columns) {
                     const merged = settings.columns.map((savedCol: any) => {
                         const original = columns.find(c => c.key === savedCol.key);
-                        return original ? { ...original, width: savedCol.width } : null;
+                        // Csak akkor tartsuk meg a szélességet, ha az eredeti oszlop még létezik
+                        return original ? { ...original, width: savedCol.width || original.width } : null;
                     }).filter(Boolean);
                     
                     const missing = columns.filter(c => !settings.columns.find((sc: any) => sc.key === c.key));
@@ -84,6 +91,11 @@ export default function EditableTable({
             columns: cols.map(c => ({ key: c.key, width: c.width }))
         };
         localStorage.setItem(`table_settings_${storageKey}`, JSON.stringify(settings));
+    };
+
+    const resetSettings = () => {
+        localStorage.removeItem(`table_settings_${storageKey}`);
+        setTableColumns(columns);
     };
 
     // Sorting Logic
@@ -110,6 +122,13 @@ export default function EditableTable({
         
         setSortConfig({ key, direction });
     };
+
+    // Calculate total width for the table element
+    const totalTableWidth = useMemo(() => {
+        let w = tableColumns.reduce((acc, col) => acc + (col.width || 150), 0);
+        if (canEdit || canDelete) w += 120; // Műveletek oszlop fix szélessége
+        return w;
+    }, [tableColumns, canEdit, canDelete]);
 
     // Column Reordering (Drag & Drop)
     const handleDragStart = (idx: number) => {
@@ -145,18 +164,25 @@ export default function EditableTable({
     };
 
     const handleResizeMove = (e: MouseEvent) => {
-        if (!resizerRef.current) return;
-        const diff = e.pageX - resizerRef.current.startX;
-        const newWidth = Math.max(50, resizerRef.current.startWidth + diff);
+        const resizer = resizerRef.current;
+        if (!resizer) return;
         
-        const newCols = [...tableColumns];
-        newCols[resizerRef.current.index] = { ...newCols[resizerRef.current.index], width: newWidth };
-        setTableColumns(newCols);
+        const diff = e.pageX - resizer.startX;
+        const newWidth = Math.max(50, resizer.startWidth + diff);
+        const colIndex = resizer.index;
+        
+        setTableColumns((prev) => {
+            const newCols = [...prev];
+            if (newCols[colIndex]) {
+                newCols[colIndex] = { ...newCols[colIndex], width: newWidth };
+            }
+            return newCols;
+        });
     };
 
     const handleResizeEnd = () => {
         if (resizerRef.current) {
-            saveSettings(tableColumns);
+            saveSettings(columnsRef.current);
         }
         resizerRef.current = null;
         document.removeEventListener('mousemove', handleResizeMove);
@@ -248,8 +274,24 @@ export default function EditableTable({
     );
 
     return (
-        <div className="overflow-x-auto glass-panel rounded-xl glow-border">
-            <table className="min-w-full divide-y divide-white/10 text-sm table-fixed">
+        <div className="flex flex-col gap-2">
+            <div className="flex justify-end mb-1">
+                <button
+                    onClick={resetSettings}
+                    className="text-[9px] uppercase tracking-widest font-bold text-gray-500 hover:text-gold transition-colors flex items-center gap-1"
+                    title="Táblázat elrendezésének alaphelyzetbe állítása"
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                    Elrendezés alaphelyzetbe
+                </button>
+            </div>
+                <div className="overflow-x-auto glass-panel rounded-xl glow-border">
+            <table 
+                className="divide-y divide-white/10 text-sm table-fixed" 
+                style={{ width: `${totalTableWidth}px`, minWidth: '100%' }}
+            >
                 <thead className="bg-black/40">
                     <tr>
                         {(canEdit || canDelete) && actionsPosition === 'start' && renderActionsHeader()}
@@ -260,22 +302,22 @@ export default function EditableTable({
                                 onDragStart={() => handleDragStart(idx)}
                                 onDragOver={(e) => handleDragOver(e, idx)}
                                 onDrop={() => handleDrop(idx)}
-                                style={{ width: col.width ? `${col.width}px` : 'auto' }}
+                                style={{ width: `${col.width || 150}px` }}
                                 className={`relative px-4 py-4 text-left font-bold uppercase tracking-widest text-[10px] group cursor-move select-none transition-colors
                                     ${sortConfig.key === col.key ? 'text-gold' : 'text-brand-blue'}
                                     ${draggedIdx === idx ? 'opacity-30' : 'opacity-100'}
                                     hover:bg-white/5`}
                                 onClick={() => handleSort(col.key)}
                             >
-                                <div className="flex items-center gap-1">
-                                    {col.label}
+                                <div className="flex items-center gap-1 truncate pr-2">
+                                    <span className="truncate">{col.label}</span>
                                     {sortConfig.key === col.key && (
-                                        <span>{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>
+                                        <span className="flex-shrink-0">{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>
                                     )}
                                 </div>
                                 <div
                                     onMouseDown={(e) => handleResizeStart(e, idx)}
-                                    className="absolute right-0 top-0 h-full w-1 cursor-col-resize hover:bg-brand-blue/50 transition-colors z-10"
+                                    className="absolute right-0 top-0 h-full w-1.5 cursor-col-resize hover:bg-gold/50 transition-colors z-20 group-hover:bg-white/10"
                                 />
                             </th>
                         ))}
@@ -291,32 +333,52 @@ export default function EditableTable({
                                 const value = isEditing ? editData[col.key] : row[col.key];
 
                                 return (
-                                    <td key={col.key} className="px-4 py-3 whitespace-nowrap overflow-hidden text-ellipsis">
-                                        {isEditing && col.editable ? (
-                                            col.type === 'boolean' ? (
-                                                <input
-                                                    type="checkbox"
-                                                    checked={!!value}
-                                                    onChange={(e) => handleChange(col.key, e.target.checked)}
-                                                    className="w-4 h-4 rounded border-white/20 bg-black/40"
-                                                />
+                                    <td key={col.key} className="px-4 py-3 truncate">
+                                        <div className="truncate">
+                                            {isEditing && col.editable ? (
+                                                col.type === 'boolean' ? (
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={!!value}
+                                                        onChange={(e) => handleChange(col.key, e.target.checked)}
+                                                        className="w-4 h-4 rounded border-white/20 bg-black/40"
+                                                    />
+                                                ) : (
+                                                    <input
+                                                        type={col.type || 'text'}
+                                                        value={value ?? ''}
+                                                        onChange={(e) => handleChange(col.key, e.target.value)}
+                                                        className="w-full bg-black/60 border border-white/20 rounded px-2 py-1 text-white focus:outline-none focus:border-gold text-xs"
+                                                    />
+                                                )
                                             ) : (
-                                                <input
-                                                    type={col.type || 'text'}
-                                                    value={value ?? ''}
-                                                    onChange={(e) => handleChange(col.key, e.target.value)}
-                                                    className="w-full bg-black/60 border border-white/20 rounded px-2 py-1 text-white focus:outline-none focus:border-gold text-xs"
-                                                />
-                                            )
-                                        ) : (
-                                            <span className={row.highlight ? "text-gold font-bold" : "text-gray-300"}>
-                                                {col.type === 'boolean' 
-                                                    ? (value ? '✅' : '❌') 
-                                                    : col.type === 'time' && typeof value === 'string'
-                                                        ? value.substring(0, 5)
-                                                        : (value?.toString() || '-')}
-                                            </span>
-                                        )}
+                                                <span className={`${row.highlight ? "text-gold font-bold" : "text-gray-300"} truncate block`}>
+                                                    {col.type === 'boolean' 
+                                                        ? (value ? '✅' : '❌') 
+                                                        : col.type === 'time' && typeof value === 'string'
+                                                            ? value.substring(0, 5)
+                                                            : (col.key === 'title' || col.key === 'event_url' || col.key === 'source_url')
+                                                                ? (
+                                                                    (col.key === 'title' ? (row.event_url || row.source_url) : value) ? (
+                                                                        <a 
+                                                                            href={col.key === 'title' ? (row.event_url || row.source_url) : value} 
+                                                                            target="_blank" 
+                                                                            rel="noopener noreferrer"
+                                                                            className="text-brand-blue hover:text-gold hover:underline transition-colors flex items-center gap-1 group/link truncate inline-flex max-w-full"
+                                                                        >
+                                                                            <span className="truncate">{value?.toString() || '-'}</span>
+                                                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 opacity-0 group-hover/link:opacity-100 transition-opacity flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                                                            </svg>
+                                                                        </a>
+                                                                    ) : (
+                                                                        <span className="truncate">{value?.toString() || '-'}</span>
+                                                                    )
+                                                                )
+                                                                : <span className="truncate">{value?.toString() || '-'}</span>}
+                                                </span>
+                                            )}
+                                        </div>
                                     </td>
                                 );
                             })}
@@ -326,5 +388,6 @@ export default function EditableTable({
                 </tbody>
             </table>
         </div>
+    </div>
     );
 }

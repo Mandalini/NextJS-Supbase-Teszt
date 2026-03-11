@@ -75,7 +75,10 @@ Az `app/components/EditableTable.tsx` egy univerzális eszköz a CRUD műveletek
 **Főbb Interakciók:**
 - **Rendezés:** Kattints bármelyik oszlop fejlécére a rendezéshez (Növekvő -> Csökkenő -> Eredeti). Az aktív rendezést arany szín és nyíl jelzi.
 - **Oszlopok mozgatása:** A fejléceket megfogva és áthúzva (Drag & Drop) tetszőlegesen módosítható az oszlopok sorrendje.
-- **Átméretezés:** Az oszlopok jobb szélén található fogantyúval módosítható a szélesség.
+- **Átméretezés:** Az oszlopok jobb szélén található fogantyúval módosítható a szélesség. A rendszer pixel-pontos méretezést használ: a táblázat összélessége az oszlopok összegéből adódik, így vízszintes görgetés mellett is stabil marad a layout.
+- **Keskeny oszlopok (Truncate):** Az oszlopok tetszőlegesen keskenyre húzhatók, a tartalom ilyenkor `truncate` (három pont) segítségével lesz levágva.
+- **Gyors Navigáció:** A `title` kulcsú oszlop intelligens linkként működik: ha van `event_url` vagy `source_url`, rákattintva az új ablakban nyílik meg. Minden `_url` végződésű kulcs automatikusan kattintható linkké válik.
+- **Reset Layout:** A táblázat jobb felső sarkában található gombbal bármikor törölhető a mentett elrendezés (szélesség és sorrend) a `localStorage`-ból.
 - **Perzisztencia:** Minden layout módosítás (szélesség, sorrend) automatikusan mentődik a `localStorage`-ba a megadott `storageKey` alapján.
 
 **Használat (Props):**
