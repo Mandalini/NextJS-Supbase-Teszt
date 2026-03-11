@@ -646,9 +646,9 @@ export default function DashboardPage() {
                                                         {event.title}
                                                     </Link>
                                                 ) : (
-                                                    <Link href={`/dashboard/edit/${event.id}`} className="hover:text-gray-300 text-brand-blue transition-colors block truncate pr-2 decoration-brand-blue/30 hover:underline underline-offset-4">
-                                                        {event.title}
-                                                    </Link>
+                                                <Link href={`/dashboard/edit/${event.id}`} className="hover:text-gold transition-colors block truncate pr-2">
+                                                    {event.title}
+                                                </Link>
                                                 )}
                                             </td>
                                             <td className="px-2 py-4 whitespace-nowrap max-w-0">

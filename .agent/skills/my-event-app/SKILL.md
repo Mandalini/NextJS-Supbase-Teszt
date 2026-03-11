@@ -99,6 +99,7 @@ Az `app/components/EditableTable.tsx` egy univerzális eszköz a CRUD műveletek
 -   **Reszponzivitás:** Adaptáld a tartalmat a képernyőmérethez (pl. `hidden sm:block`, `hidden lg:inline-block` a hosszú nevekhez).
 
 ## 3.5 Adatformátumok & Megjelenítés
+- **Linkek & Címek:** A táblázatokban (és máshol is) a kattintható címek alapszíne fehér (`text-white`), hover esetén arany (`hover:text-gold`), és használjanak `transition-colors` effektet a sima átmenetért. Ne használj kék színt a linkekhez.
 - **Dátumformátum:** `YYYY.MM.DD` (vagy a Supabase-ból érkező `YYYY-MM-DD`).
 - **Időformátum:** `HH:mm` (a másodperceket a legtöbb helyen el kell rejteni a UI-on).
 - **Boolean megjelenítés:** `✅` az igaz, `❌` a hamis értékekhez.
