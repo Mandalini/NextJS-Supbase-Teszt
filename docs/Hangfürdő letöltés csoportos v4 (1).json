@@ -1,0 +1,562 @@
+{
+  "name": "Hangfürdő letöltés csoportos v4",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -1184,
+        -352
+      ],
+      "id": "af97ebfe-36d3-4fed-bb80-0f6afa074c15",
+      "name": "When clicking 'Execute workflow'"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hoursInterval": 4
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -1184,
+        -144
+      ],
+      "id": "c7c9650a-1e7b-420e-91ca-361b30a2c881",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "url": "https://krehiptongtcrofkdhxh.supabase.co/rest/v1/scrape_sources?is_active=eq.true&select=*",
+        "sendHeaders": true,
+        "specifyHeaders": "json",
+        "jsonHeaders": "{\n  \"apikey\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtyZWhpcHRvbmd0Y3JvZmtkaHhoIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MTk2MTcyMiwiZXhwIjoyMDg3NTM3NzIyfQ.gpvOd-Oy4LDYJbZw2D-SLKTkor6sExfSD9gguFzoKWk\",\n  \"Authorization\": \"Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtyZWhpcHRvbmd0Y3JvZmtkaHhoIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MTk2MTcyMiwiZXhwIjoyMDg3NTM3NzIyfQ.gpvOd-Oy4LDYJbZw2D-SLKTkor6sExfSD9gguFzoKWk\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -976,
+        -256
+      ],
+      "id": "7f1c9529-7f5a-4dd8-b66f-421ca4ff8854",
+      "name": "Get Sources"
+    },
+    {
+      "parameters": {
+        "options": {
+          "reset": false
+        }
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        -752,
+        -256
+      ],
+      "id": "b04360f0-e228-4990-bd5f-85732ba19702",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "url": "={{ $('Loop Over Items').item.json.source_url }}",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {}
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -384,
+        -176
+      ],
+      "id": "b1d3fbce-bb35-4cbc-a0d7-315fc097eadd",
+      "name": "Fetch Page",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $('Loop Over Items').item.json.parser_type }}",
+                    "rightValue": "mec_agenda",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "27c81dd4-e375-46f4-b828-bfba17d70fe9"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "mec_agenda"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $('Loop Over Items').item.json.parser_type }}",
+                    "rightValue": "other_parser",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "286ca60d-4410-40d3-9af2-e55c9dfd67f5"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "other_parser"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3,
+      "position": [
+        -176,
+        -176
+      ],
+      "id": "273aa3b2-19a4-43e7-8b0b-f8b419d22e10",
+      "name": "Parser Switch"
+    },
+    {
+      "parameters": {
+        "jsCode": "// =============================================\n// PARSER: mec_agenda\n// Kimenet: egységes struktúra\n// =============================================\nconst html = $json.data || '';\nconst sourceItem = $('Loop Over Items').item.json;\nconst sourceUrl  = sourceItem.source_url || '';\nconst sourceKey  = sourceItem.source_key || 'unknown';\nconst scrapeRunId = $('Get Run ID').first().json.body;\n\nfunction stripLeadingEquals(value) {\n  if (value === null || value === undefined) return value;\n  if (typeof value !== 'string') return value;\n  return value.replace(/^\\s*=\\s*/, '').trim();\n}\n\nfunction decodeHtml(str = '') {\n  return stripLeadingEquals(\n    str\n      .replace(/&#8211;/g, '–')\n      .replace(/&#8220;/g, '\\u201c')\n      .replace(/&#8221;/g, '\\u201d')\n      .replace(/&#038;/g, '&')\n      .replace(/&amp;/g, '&')\n      .replace(/&quot;/g, '\"')\n      .replace(/&#039;/g, \"'\")\n      .replace(/&nbsp;/g, ' ')\n      .trim()\n  );\n}\n\nfunction cleanRecord(obj) {\n  const out = {};\n  for (const [key, value] of Object.entries(obj)) {\n    out[key] = typeof value === 'string' ? stripLeadingEquals(value) : value;\n  }\n  return out;\n}\n\nconst monthMap = {\n  jan: '01', febr: '02', márc: '03', ápr: '04',\n  máj: '05', jún: '06', júl: '07', aug: '08',\n  szept: '09', okt: '10', nov: '11', dec: '12'\n};\n\nfunction parseHungarianDate(rawDate) {\n  const safeDate = stripLeadingEquals(rawDate);\n  const cleanedDate = safeDate.replace(/\\./g, '');\n  const m = cleanedDate.match(/^(\\d{4})\\s+([^\\s]+)\\s+(\\d{1,2})$/i);\n  if (!m) return safeDate;\n  const year = m[1];\n  const month = monthMap[m[2].toLowerCase()] || '01';\n  const day = String(m[3]).padStart(2, '0');\n  return `${year}-${month}-${day}`;\n}\n\nconst now = new Date();\nconst downloadedAt = now.toISOString();\nconst downloadDate = new Intl.DateTimeFormat('sv-SE', {\n  timeZone: 'Europe/Budapest',\n  year: 'numeric', month: '2-digit', day: '2-digit'\n}).format(now);\n\nconst downloaderId = 'KGY';\nconst results = [];\n\nconst dailyBlocks = html.split(/<div[^>]*class=\"[^\"]*mec-agenda-date-wrap[^\"]*\"[^>]*>/i);\n\nfor (let i = 1; i < dailyBlocks.length; i++) {\n  const block = dailyBlocks[i];\n  const dayMatch  = block.match(/<span[^>]*class=\"[^\"]*mec-agenda-day[^\"]*\"[^>]*>([\\s\\S]*?)<\\/span>/i);\n  const dateMatch = block.match(/<span[^>]*class=\"[^\"]*mec-agenda-date[^\"]*\"[^>]*>([\\s\\S]*?)<\\/span>/i);\n  const day = dayMatch  ? decodeHtml(dayMatch[1])  : null;\n  const rawDate   = dateMatch ? decodeHtml(dateMatch[1]) : null;\n  const eventDate = rawDate   ? parseHungarianDate(rawDate) : null;\n\n  const events = block.split(/<div[^>]*class=\"[^\"]*mec-agenda-event[^\"]*\"[^>]*>/i);\n  for (let j = 1; j < events.length; j++) {\n    const evHtml = events[j];\n    const startMatch = evHtml.match(/<span[^>]*class=\"[^\"]*mec-start-time[^\"]*\"[^>]*>([\\s\\S]*?)<\\/span>/i);\n    const endMatch   = evHtml.match(/<span[^>]*class=\"[^\"]*mec-end-time[^\"]*\"[^>]*>([\\s\\S]*?)<\\/span>/i);\n    let eventUrl = '', title = '';\n    const linkMatch  = evHtml.match(/<a[^>]*href=\"([^\"]*)\"[^>]*>([\\s\\S]*?)<\\/a>/i);\n    if (linkMatch) {\n      eventUrl = decodeHtml(linkMatch[1]);\n      title    = decodeHtml(linkMatch[2].replace(/<[^>]+>/g, ''));\n    } else {\n      const titleMatch = evHtml.match(/<span[^>]*class=\"[^\"]*mec-agenda-event-title[^\"]*\"[^>]*>([\\s\\S]*?)<\\/span>/i)\n                      || evHtml.match(/<h[1-6][^>]*>([\\s\\S]*?)<\\/h[1-6]>/i);\n      if (titleMatch) title = decodeHtml(titleMatch[1].replace(/<[^>]+>/g, ''));\n    }\n    if (!title || title.trim() === '') continue;\n\n    const row = cleanRecord({\n      downloaded_at: downloadedAt,\n      download_date: downloadDate,\n      downloader_id: downloaderId,\n      source_url:    sourceUrl,\n      source_key:    sourceKey,\n      day:           day,\n      raw_date:      rawDate,\n      event_date:    eventDate,\n      start:         startMatch ? decodeHtml(startMatch[1]) : '',\n      end:           endMatch   ? decodeHtml(endMatch[1])   : '',\n      event_url:     eventUrl,\n      scrape_run_id: scrapeRunId,   // ← ez az új sor\n      title:         title\n    });\n    if (!row.event_url && row.title) {\n      row.event_url = 'nolink_' + row.event_date + '_' + row.title.substring(0, 20).replace(/\\s+/g, '-').toLowerCase();\n    }\n    results.push({ json: row });\n  }\n}\n\nreturn results;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        16,
+        -272
+      ],
+      "id": "a859e030-ca77-46f7-b8fa-9590f987955c",
+      "name": "Parse: MEC Agenda"
+    },
+    {
+      "parameters": {
+        "jsCode": "// =============================================\n// PARSER: other_parser (sablon a jövőre)\n// Kimenet: AZONOS struktúra!\n// =============================================\nconst html = $json.data || '';\nconst sourceItem = $('Loop Over Items').item.json;\nconst sourceUrl  = sourceItem.source_url || '';\nconst sourceKey  = sourceItem.source_key || 'unknown';\n\nconst now = new Date();\nconst downloadedAt = now.toISOString();\nconst downloadDate = new Intl.DateTimeFormat('sv-SE', {\n  timeZone: 'Europe/Budapest',\n  year: 'numeric', month: '2-digit', day: '2-digit'\n}).format(now);\nconst downloaderId = 'KGY';\n\n// TODO: ide kerül az oldal-specifikus parse logika\nconst results = [];\n\n// Kötelező mezők minden rekordban:\n// downloaded_at, download_date, downloader_id,\n// source_url, source_key, day, raw_date, event_date,\n// start, end, event_url, title\n\nreturn results;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        32,
+        -64
+      ],
+      "id": "2d80054d-f74f-464b-9e43-d72a13e71c8f",
+      "name": "Parse: Other Parser"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://krehiptongtcrofkdhxh.supabase.co/rest/v1/soundbath_events?on_conflict=source_key,source_event_key",
+        "sendHeaders": true,
+        "specifyHeaders": "json",
+        "jsonHeaders": "{\n  \"apikey\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtyZWhpcHRvbmd0Y3JvZmtkaHhoIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MTk2MTcyMiwiZXhwIjoyMDg3NTM3NzIyfQ.gpvOd-Oy4LDYJbZw2D-SLKTkor6sExfSD9gguFzoKWk\",\n  \"Authorization\": \"Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtyZWhpcHRvbmd0Y3JvZmtkaHhoIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MTk2MTcyMiwiZXhwIjoyMDg3NTM3NzIyfQ.gpvOd-Oy4LDYJbZw2D-SLKTkor6sExfSD9gguFzoKWk\",\n  \"Content-Type\": \"application/json\",\n  \"Prefer\": \"resolution=merge-duplicates,return=minimal\"\n}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{\n{\n  \"downloaded_at\":    $json.downloaded_at,\n  \"download_date\":    $json.download_date,\n  \"downloader_id\":    $json.downloader_id,\n  \"source_url\":       $json.source_url,\n  \"day_hu\":           $json.day,\n  \"raw_date\":         $json.raw_date,\n  \"event_date\":       $json.event_date,\n  \"start_time\":       $json.start,\n  \"end_time\":         $json.end,\n  \"event_url\":        $json.event_url,\n  \"title\":            $json.title,\n  \"source_key\":       $json.source_key,\n  \"source_event_key\": $json.event_url,\n  \"last_seen_at\":     $now,\n  \"is_active\":        true,\n  \"deleted_at\":       null,\n  \"scrape_run_id\": $('Loop Over Items').item.json.current_run_id\n}\n}}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        256,
+        -160
+      ],
+      "id": "20db2d91-7fb1-4eca-9390-505a5177321f",
+      "name": "Supabase Upsert"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://krehiptongtcrofkdhxh.supabase.co/rest/v1/rpc/deactivate_missing_events",
+        "sendHeaders": true,
+        "specifyHeaders": "json",
+        "jsonHeaders": "{\n  \"apikey\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtyZWhpcHRvbmd0Y3JvZmtkaHhoIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MTk2MTcyMiwiZXhwIjoyMDg3NTM3NzIyfQ.gpvOd-Oy4LDYJbZw2D-SLKTkor6sExfSD9gguFzoKWk\",\n  \"Authorization\": \"Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtyZWhpcHRvbmd0Y3JvZmtkaHhoIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MTk2MTcyMiwiZXhwIjoyMDg3NTM3NzIyfQ.gpvOd-Oy4LDYJbZw2D-SLKTkor6sExfSD9gguFzoKWk\",\n  \"Content-Type\": \"application/json\"\n}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"p_source_key\": \"{{ $('Loop Over Items').item.json.source_key }}\",\n  \"p_threshold_minutes\": 5\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        512,
+        -80
+      ],
+      "id": "1cfdd3e5-29e2-48e6-b294-ee674d24f76b",
+      "name": "Supabase SoftDelete",
+      "executeOnce": true
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "1JyJ1-6XS6PDNtqP7kX3ffKIWLTYRfe7uVqyj9xtHe7I",
+          "mode": "list",
+          "cachedResultName": "Letöltött hangfürdők",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1JyJ1-6XS6PDNtqP7kX3ffKIWLTYRfe7uVqyj9xtHe7I/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Munkalap1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1JyJ1-6XS6PDNtqP7kX3ffKIWLTYRfe7uVqyj9xtHe7I/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [
+            "downloaded_at | download_date | downloader_id | source_url | day | raw_date | event_date | start | end | event_url | title"
+          ],
+          "schema": [
+            {
+              "id": "downloaded_at | download_date | downloader_id | source_url | day | raw_date | event_date | start | end | event_url | title",
+              "displayName": "downloaded_at | download_date | downloader_id | source_url | day | raw_date | event_date | start | end | event_url | title",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "downloaded_at",
+              "displayName": "downloaded_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "download_date",
+              "displayName": "download_date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "downloader_id",
+              "displayName": "downloader_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "source_url",
+              "displayName": "source_url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "day",
+              "displayName": "day",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "raw_date",
+              "displayName": "raw_date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "event_date",
+              "displayName": "event_date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "start",
+              "displayName": "start",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "end",
+              "displayName": "end",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "event_url",
+              "displayName": "event_url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "title",
+              "displayName": "title",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        224,
+        -416
+      ],
+      "id": "a2eac8bf-cc62-40fc-9e45-755f55aa11b3",
+      "name": "Append or update row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "RqtVHksIfxSVqp83",
+          "name": "Google Sheets account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://krehiptongtcrofkdhxh.supabase.co/rest/v1/rpc/get_next_run_id",
+        "sendHeaders": true,
+        "specifyHeaders": "json",
+        "jsonHeaders": "{\n  \"apikey\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtyZWhpcHRvbmd0Y3JvZmtkaHhoIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MTk2MTcyMiwiZXhwIjoyMDg3NTM3NzIyfQ.gpvOd-Oy4LDYJbZw2D-SLKTkor6sExfSD9gguFzoKWk\",\n  \"Authorization\": \"Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtyZWhpcHRvbmd0Y3JvZmtkaHhoIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MTk2MTcyMiwiZXhwIjoyMDg3NTM3NzIyfQ.gpvOd-Oy4LDYJbZw2D-SLKTkor6sExfSD9gguFzoKWk\",\n  \"Content-Type\": \"application/json\"\n}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"p_source_key\": \"{{$json.source_key }}\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -576,
+        -176
+      ],
+      "id": "52a4c5ab-1332-4eb5-8268-2de22bd8b78d",
+      "name": "Get Run ID",
+      "executeOnce": false
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking 'Execute workflow'": {
+      "main": [
+        [
+          {
+            "node": "Get Sources",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get Sources",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Sources": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Get Run ID",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Page": {
+      "main": [
+        [
+          {
+            "node": "Parser Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parser Switch": {
+      "main": [
+        [
+          {
+            "node": "Parse: MEC Agenda",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Parse: Other Parser",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse: MEC Agenda": {
+      "main": [
+        [
+          {
+            "node": "Supabase Upsert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse: Other Parser": {
+      "main": [
+        [
+          {
+            "node": "Supabase Upsert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supabase Upsert": {
+      "main": [
+        [
+          {
+            "node": "Supabase SoftDelete",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supabase SoftDelete": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Run ID": {
+      "main": [
+        [
+          {
+            "node": "Fetch Page",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false,
+    "executionTimeout": -1
+  },
+  "versionId": "79bf3b65-52bf-4c3a-8ec0-20a818642626",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "342cc30b51cdbf113cefc933cb8312e695da48b2417202d0c37380815543a623"
+  },
+  "id": "uccDeoN8fiPkB8Ze",
+  "tags": []
+}

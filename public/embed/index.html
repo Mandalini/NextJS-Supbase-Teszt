@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Esemény Lekérdező - REZGÉSKAPU</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;600;700&display=swap" rel="stylesheet">
+    <!-- Supabase JS -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- Local Styles -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="event-app-root">
+        <div id="loader" class="loader-container">
+            <div class="loader"></div>
+            <p>Események betöltése...</p>
+        </div>
+        <div id="error-message" class="error-container hidden">
+            <span class="error-icon">⚠️</span>
+            <p id="error-text"></p>
+        </div>
+        <div id="content" class="hidden">
+            <div class="table-wrapper glass-panel">
+                <table id="events-table">
+                    <thead>
+                        <tr>
+                            <th>Cím</th>
+                            <th>Dátum</th>
+                            <th>Kategória</th>
+                            <th>Helyszín</th>
+                            <th class="text-right">Műveletek</th>
+                        </tr>
+                    </thead>
+                    <tbody id="events-body">
+                        <!-- Itt fognak megjelenni az események -->
+                    </tbody>
+                </table>
+            </div>
+            <div id="empty-state" class="empty-container hidden">
+                <span class="empty-icon">(( • ))</span>
+                <h3>Jelenleg nincs <span class="highlight">publikus</span> esemény.</h3>
+                <p>Térj vissza később!</p>
+            </div>
+        </div>
+    </div>
+    <!-- Local Script -->
+    <script src="script.js"></script>
+</body>
+</html>
