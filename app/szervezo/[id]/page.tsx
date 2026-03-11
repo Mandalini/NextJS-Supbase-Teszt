@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import Image from 'next/image';
 import Link from 'next/link';
+import BackButton from '@/app/components/BackButton';
 
 // Ehhez a publikus URL oldalhoz nem nyitunk adatbázis kapcsolatot a klienstől, 
 // hanem generáljuk szerver-oldalon a Next.js App Routerrel.
@@ -9,12 +10,15 @@ const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
 
-export default async function OrganizerPage({ params }: { params: { id: string } }) {
+export default async function OrganizerPage({ params }: { params: Promise<{ id: string }> }) {
+    const resolvedParams = await params;
+    const { id } = resolvedParams;
+
     // 1. Profil lekérdezése
     const { data: profile } = await supabase
         .from('profiles')
         .select('*')
-        .eq('id', params.id)
+        .eq('id', id)
         .eq('is_public', true) // Csak a publikus profilokat mutatjuk!
         .single();
 
@@ -36,12 +40,16 @@ export default async function OrganizerPage({ params }: { params: { id: string }
     const { data: events } = await supabase
         .from('events')
         .select('*')
-        .eq('user_id', params.id)
+        .eq('user_id', id)
         .eq('status', 'published')
         .order('date', { ascending: true });
 
     return (
-        <div className="min-h-screen bg-[#070707] pb-20">
+        <div className="min-h-screen bg-[#070707] pb-20 relative">
+            <div className="absolute top-6 left-6 z-50">
+                <BackButton />
+            </div>
+
             {/* Fejléc / Borítókép-szerű sáv */}
             <div className="h-64 md:h-80 w-full bg-gradient-to-br from-brand-blue/20 via-brand-purple/20 to-black relative overflow-hidden flex items-end justify-center pb-16">
                 <div className="absolute inset-0 bg-[url('/noise.png')] opacity-[0.03] mix-blend-overlay pointer-events-none"></div>
@@ -92,14 +100,14 @@ export default async function OrganizerPage({ params }: { params: { id: string }
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 text-left">
                     {/* Bemutatkozás (HTML formázott Quill tartalom) */}
-                    <div className="lg:col-span-2">
+                    <div className="lg:col-span-2 min-w-0 overflow-hidden">
                         <div className="flex items-center gap-3 mb-6">
                             <span className="text-2xl">📝</span>
                             <h2 className="text-2xl font-bold text-white uppercase tracking-widest">Bemutatkozás</h2>
                         </div>
 
                         {profile.introduction ? (
-                            <div className="prose prose-invert prose-brand prose-p:text-gray-400 prose-a:text-brand-blue hover:prose-a:text-brand-purple prose-headings:text-white max-w-none bg-white/5 p-8 rounded-3xl border border-white/5"
+                            <div className="prose prose-invert prose-brand prose-p:text-gray-400 prose-a:text-brand-blue hover:prose-a:text-brand-purple prose-headings:text-white max-w-none bg-white/5 p-8 rounded-3xl border border-white/5 overflow-hidden break-words hyphens-auto"
                                 dangerouslySetInnerHTML={{ __html: profile.introduction }}
                             />
                         ) : (

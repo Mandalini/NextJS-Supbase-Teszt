@@ -12,10 +12,10 @@ export default async function PublicEventPage({ params, searchParams }: { params
     const resolvedSearchParams = await searchParams;
     const isAutoJoin = resolvedSearchParams.action === 'join';
 
-    // 2. Esemény adatainak lekérdezése
+    // 2. Esemény adatainak lekérdezése profillal együtt
     const { data: event, error } = await supabase
         .from('events')
-        .select('*')
+        .select('*, profiles!events_user_id_fkey(display_name)')
         .eq('id', resolvedParams.id)
         .single();
 
@@ -99,6 +99,20 @@ export default async function PublicEventPage({ params, searchParams }: { params
                                     </div>
                                 </div>
                             )}
+
+                            {/* Szervező link */}
+                            <div className="flex items-start gap-2 mt-4 pt-4 border-t border-white/5">
+                                <span className="text-brand-purple text-base mt-0.5">👤</span>
+                                <div>
+                                    <p className="text-white text-xs font-bold">Szervező</p>
+                                    <Link 
+                                        href={`/szervezo/${event.user_id}`}
+                                        className="text-brand-blue hover:text-white transition-colors text-[10px] font-bold uppercase tracking-widest mt-0.5 block"
+                                    >
+                                        {(event as any).profiles?.display_name || 'Névtelen Szervező'} →
+                                    </Link>
+                                </div>
+                            </div>
                         </div>
                     </div>
 

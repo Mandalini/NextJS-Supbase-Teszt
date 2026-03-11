@@ -338,12 +338,18 @@ export default function RolesPage() {
                                                             )}
                                                         </div>
                                                     </div>
-                                                    <div className="mt-1 pl-5">
+                                                    <div className="mt-1 pl-5 flex flex-col gap-1">
                                                         <Link
                                                             href={`/dashboard/admin-edit-profile/${user.id}`}
                                                             className="text-[9px] uppercase tracking-widest text-gold/70 hover:text-gold transition-colors font-bold"
                                                         >
                                                             Profil szerkesztése →
+                                                        </Link>
+                                                        <Link
+                                                            href={`/szervezo/${user.id}`}
+                                                            className="text-[9px] uppercase tracking-widest text-brand-blue/70 hover:text-brand-blue transition-colors font-bold"
+                                                        >
+                                                            Bemutatkozó oldal →
                                                         </Link>
                                                     </div>
                                                 </td>
