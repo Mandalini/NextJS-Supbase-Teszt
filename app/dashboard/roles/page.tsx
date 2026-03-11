@@ -176,14 +176,18 @@ export default function RolesPage() {
 
     return (
         <div className="p-8 max-w-6xl mx-auto min-h-screen text-white">
-            <div className="flex items-center justify-between mb-10 border-b border-white/10 pb-6">
-                <h1 className="text-4xl font-extralight tracking-wider">FELHASZNÁLÓK <span className="text-brand-blue font-bold glow-text">KEZELÉSE</span></h1>
-                <Link
-                    href="/dashboard"
-                    className="px-5 py-2.5 glass-panel text-white hover:bg-white/10 rounded-xl transition-all glow-border text-[10px] uppercase tracking-widest font-bold flex items-center gap-2"
-                >
+            <div className="flex flex-col mb-10 gap-4">
+                <Link href="/dashboard" className="self-start px-5 py-2.5 glass-panel text-white hover:bg-white/10 rounded-xl transition-all glow-border text-[10px] uppercase tracking-widest font-bold flex items-center gap-2 mb-4">
                     <span>&larr;</span> Vissza a Vezérlőpultra
                 </Link>
+                <div className="flex justify-between items-end">
+                    <div>
+                        <h1 className="text-4xl font-extralight tracking-wider">FELHASZNÁLÓK <span className="text-gold font-bold glow-text">KEZELÉSE</span></h1>
+                        <p className="text-gray-400 text-sm font-light mt-2">
+                            Szerepkörök és jogosultságok dinamikus kezelése a Szerepkör-mátrix segítségével.
+                        </p>
+                    </div>
+                </div>
             </div>
 
             {/* Tabok */}
