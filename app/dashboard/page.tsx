@@ -317,7 +317,10 @@ export default function DashboardPage() {
                         {/* Hamburger Dropdown / Beállítások */}
                         <div className="relative border-l border-white/10 pl-4">
                             <button 
-                                onClick={() => setIsMenuOpen(!isMenuOpen)}
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    setIsMenuOpen(!isMenuOpen);
+                                }}
                                 className={`text-white transition-colors p-2 rounded-full hover:bg-white/5 flex items-center justify-center ${isMenuOpen ? 'text-gold bg-white/10' : 'hover:text-brand-blue'}`}
                             >
                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -326,23 +329,26 @@ export default function DashboardPage() {
                             </button>
 
                             {/* Dropdown panel */}
-                            <div className={`absolute right-0 mt-2 w-56 bg-black/80 backdrop-blur-xl border border-white/10 rounded-xl shadow-[0_10px_30px_rgba(0,0,0,0.8)] transition-all duration-300 overflow-hidden transform origin-top-right z-50
-                                ${isMenuOpen ? 'opacity-100 visible scale-100' : 'opacity-0 invisible scale-95'}`}>
-                                <Link href="/" className="block px-4 py-3 text-sm text-gray-300 hover:text-brand-blue hover:bg-brand-blue/10 border-b border-white/5 transition-colors flex items-center gap-2">
+                            <div 
+                                onClick={(e) => e.stopPropagation()}
+                                className={`absolute right-0 mt-2 w-56 bg-black/80 backdrop-blur-xl border border-white/10 rounded-xl shadow-[0_10px_30px_rgba(0,0,0,0.8)] transition-all duration-300 overflow-hidden transform origin-top-right z-50
+                                ${isMenuOpen ? 'opacity-100 visible scale-100' : 'opacity-0 invisible scale-95'}`}
+                            >
+                                <Link onClick={() => setIsMenuOpen(false)} href="/" className="block px-4 py-3 text-sm text-gray-300 hover:text-brand-blue hover:bg-brand-blue/10 border-b border-white/5 transition-colors flex items-center gap-2">
                                     <span className="text-lg">&larr;</span> Kezdőlap
                                 </Link>
                                 {hasPermission('manage_categories') && (
-                                    <Link href="/dashboard/categories" className="block px-4 py-3 text-sm text-gray-300 hover:text-gold hover:bg-gold/10 border-b border-white/5 transition-colors flex items-center gap-2 font-bold tracking-widest uppercase text-[10px]">
+                                    <Link onClick={() => setIsMenuOpen(false)} href="/dashboard/categories" className="block px-4 py-3 text-sm text-gray-300 hover:text-gold hover:bg-gold/10 border-b border-white/5 transition-colors flex items-center gap-2 font-bold tracking-widest uppercase text-[10px]">
                                         <span className="text-sm">🏷</span> Kategóriák Kezelése
                                                                     </Link>
                                 )}
                                 {hasPermission('manage_roles') && (
-                                    <Link href="/dashboard/roles" className="block px-4 py-3 text-sm text-gray-300 hover:text-brand-purple hover:bg-brand-purple/10 border-b border-white/5 transition-colors flex items-center gap-2 font-bold tracking-widest uppercase text-[10px]">
+                                    <Link onClick={() => setIsMenuOpen(false)} href="/dashboard/roles" className="block px-4 py-3 text-sm text-gray-300 hover:text-brand-purple hover:bg-brand-purple/10 border-b border-white/5 transition-colors flex items-center gap-2 font-bold tracking-widest uppercase text-[10px]">
                                         <span className="text-sm">👥</span> Felhasználók Kezelése
                                     </Link>
                                 )}
                                 {hasPermission('view_uploaded_events') && (
-                                    <Link href="/dashboard/feltoltott-esemenyek" className="block px-4 py-3 text-sm text-gray-300 hover:text-brand-blue hover:bg-brand-blue/10 transition-colors flex items-center gap-2 font-bold tracking-widest uppercase text-[10px]">
+                                    <Link onClick={() => setIsMenuOpen(false)} href="/dashboard/feltoltott-esemenyek" className="block px-4 py-3 text-sm text-gray-300 hover:text-brand-blue hover:bg-brand-blue/10 transition-colors flex items-center gap-2 font-bold tracking-widest uppercase text-[10px]">
                                         <span className="text-sm">📥</span> Feltöltött események
                                     </Link>
                                 )}
