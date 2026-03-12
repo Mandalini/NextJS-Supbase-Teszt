@@ -441,9 +441,14 @@ export default function DashboardPage() {
                                     </Link>
                                 )}
                                 {hasPermission('manage_sync_rules') && (
-                                    <Link onClick={() => setIsMenuOpen(false)} href="/dashboard/sync-locations" className="block px-4 py-3 text-sm text-gray-300 hover:text-gold hover:bg-gold/10 transition-colors flex items-center gap-2 font-bold tracking-widest uppercase text-[10px]">
-                                        <span className="text-sm">🔄</span> Szinkronizálási helyek
-                                    </Link>
+                                    <>
+                                        <Link onClick={() => setIsMenuOpen(false)} href="/dashboard/sync-locations" className="block px-4 py-3 text-sm text-gray-300 hover:text-gold hover:bg-gold/10 transition-colors flex items-center gap-2 font-bold tracking-widest uppercase text-[10px] border-b border-white/5">
+                                            <span className="text-sm">📍</span> Szinkronizálási helyek
+                                        </Link>
+                                        <Link onClick={() => setIsMenuOpen(false)} href="/dashboard/sync-tasks" className="block px-4 py-3 text-sm text-gray-300 hover:text-gold hover:bg-gold/10 transition-colors flex items-center gap-2 font-bold tracking-widest uppercase text-[10px]">
+                                            <span className="text-sm">🔄</span> Szinkronizálás vezérlő
+                                        </Link>
+                                    </>
                                 )}
                             </div>
                         </div>

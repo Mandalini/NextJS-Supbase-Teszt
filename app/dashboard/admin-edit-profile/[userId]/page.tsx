@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { usePermissions } from '@/app/hooks/usePermissions';
 import dynamic from 'next/dynamic';
+import SyncTasksTable from '@/app/components/SyncTasksTable';
 import 'react-quill-new/dist/quill.snow.css';
 
 const ReactQuill = dynamic(() => import('react-quill-new'), { ssr: false });
@@ -397,6 +398,21 @@ export default function AdminEditProfilePage() {
                     </button>
                 </form>
             </div>
+
+            {/* Szinkronizálási vezérlő (Csak ha a profil publikus, vagy mindig?) - legyen mindig */}
+            {(userPermissions.some((p: any) => p.action === 'view_sync_rules') || userPermissions.some((p: any) => p.action === 'manage_sync_rules')) && (
+                <div className="glass-panel p-6 rounded-2xl glow-border mb-6">
+                    <h3 className="text-xl font-bold uppercase tracking-widest text-brand-blue mb-4">Külső Szinkronizálás Célpontjai</h3>
+                    <p className="text-gray-400 text-xs mb-4">Itt állíthatod be, hogy ezt a szervezőt mely külső rendszerekbe kell szinkronizálni, és nyomon követheted azok állapotát.</p>
+                    <div className="bg-black/40 rounded-xl overflow-hidden border border-white/10 p-2 md:p-4">
+                        <SyncTasksTable 
+                            fixedTargetType="Szervező" 
+                            fixedTargetId={userId} 
+                            readonly={!userPermissions.some((p: any) => p.action === 'manage_sync_rules')}
+                        />
+                    </div>
+                </div>
+            )}
 
             {/* Veszélyzóna – Törlés */}
             {!isSelf && (

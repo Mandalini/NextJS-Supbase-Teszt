@@ -96,6 +96,15 @@ Az `app/components/EditableTable.tsx` egy univerzális eszköz a CRUD műveletek
 - **Boolean megjelenítés:** `✅` az igaz, `❌` a hamis értékekhez.
 - **Kiemelés:** Ha a sor objektumban `highlight: true` szerepel, a sor szövege arany és félkövér lesz.
 
+### 3.7 Admin Oldal Struktúra
+Új adminisztrációs oldalak (pl. szinkronizálás, beállítások) létrehozásakor az alábbi struktúrát KÖTELEZŐ követni:
+1. **Felső Navigáció:** Kötelező egy "Vissza" gomb a bal felső sarokban (`Link` komponens, `glass-panel` stílus).
+2. **Cím:** A cím alatt rövid magyarázó szöveg (`text-gray-400 text-sm font-light`).
+3. **EditableTable Elrendezés:**
+    - `actionsPosition="start"` (A műveletek oszlop az első legyen).
+    - Az **Állapot** (státusz) oszlop közvetlenül a műveletek után következzen.
+    - Az oszlopok végére kerüljön be az utolsó módosítás időpontja (`updated_at`), formázva: Dátum + Idő (óra:perc).
+
 ### 3.4 Látványelemek & Reszponzivitás
 -   **Background Glow:** Használj `blur-[150px] opacity-20 mix-blend-screen` stílusú köröket a háttérben a cyberpunk hangulathoz.
 -   **Loading States:** Használj `animate-pulse bg-white/5` stílusú skeletonokat a betöltés alatt.

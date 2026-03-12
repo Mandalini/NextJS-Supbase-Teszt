@@ -8,8 +8,10 @@ import { supabase } from '@/lib/supabase';
 // React (uses), hogy kibontsuk a params Promise-t Next 15 szerint:
 import { use } from 'react';
 import { CustomDateInput, CustomCategorySelect } from '@/app/components/FormControls';
+import { usePermissions } from '@/app/hooks/usePermissions';
 import dynamic from 'next/dynamic';
 import 'react-quill-new/dist/quill.snow.css';
+import SyncTasksTable from '@/app/components/SyncTasksTable';
 
 const ReactQuill = dynamic(() => import('react-quill-new'), { ssr: false });
 
@@ -26,6 +28,7 @@ const QUILL_MODULES = {
 export default function EditEventPage() {
     const router = useRouter();
     const params = useParams();
+    const { hasPermission } = usePermissions();
 
     const [loading, setLoading] = useState(false);
     const [fetching, setFetching] = useState(true);
@@ -344,6 +347,22 @@ export default function EditEventPage() {
                     </button>
                 </div>
             </form >
+
+            {/* Szinkronizálási vezérlő */}
+            {(hasPermission('view_sync_rules') || hasPermission('manage_sync_rules')) && (
+                <div className="glass-panel p-6 rounded-2xl glow-border mt-8">
+                    <h3 className="text-xl font-bold uppercase tracking-widest text-brand-blue mb-4">Külső Szinkronizálás Célpontjai</h3>
+                    <p className="text-gray-400 text-xs mb-4">Itt állíthatod be, hogy ezt az eseményt mely külső rendszerekbe kell szinkronizálni, és nyomon követheted azok állapotát.</p>
+                    <div className="bg-black/40 rounded-xl overflow-hidden border border-white/10 p-2 md:p-4">
+                        <SyncTasksTable 
+                            fixedTargetType="Esemény" 
+                            fixedTargetId={params?.id as string} 
+                            readonly={!hasPermission('manage_sync_rules')}
+                        />
+                    </div>
+                </div>
+            )}
+
         </div >
     );
 }

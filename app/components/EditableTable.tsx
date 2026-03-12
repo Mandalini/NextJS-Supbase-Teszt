@@ -22,6 +22,7 @@ interface Column {
     type?: 'text' | 'boolean' | 'number' | 'date' | 'time' | 'select';
     options?: { value: any, label: string }[];
     render?: (value: any, row: any) => React.ReactNode;
+    customEditRender?: (value: any, row: any, onChange: (val: any) => void) => React.ReactNode;
 }
 
 interface EditableTableProps {
@@ -344,7 +345,9 @@ export default function EditableTable({
                                     <td key={col.key} className="px-4 py-3 truncate">
                                         <div className="truncate">
                                             {isEditing && col.editable ? (
-                                                col.type === 'boolean' ? (
+                                                col.customEditRender ? (
+                                                    col.customEditRender(value, editData, (newVal) => handleChange(col.key, newVal))
+                                                ) : col.type === 'boolean' ? (
                                                     <input
                                                         type="checkbox"
                                                         checked={!!value}
