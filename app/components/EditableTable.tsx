@@ -19,7 +19,8 @@ interface Column {
     label: string;
     width?: number;
     editable?: boolean;
-    type?: 'text' | 'boolean' | 'number' | 'date' | 'time';
+    type?: 'text' | 'boolean' | 'number' | 'date' | 'time' | 'select';
+    options?: { value: any, label: string }[];
     render?: (value: any, row: any) => React.ReactNode;
 }
 
@@ -35,6 +36,7 @@ interface EditableTableProps {
     canEdit?: boolean;
     canDelete?: boolean;
     customActions?: (row: any) => React.ReactNode;
+    headerActions?: React.ReactNode;
 }
 
 export default function EditableTable({
@@ -48,7 +50,8 @@ export default function EditableTable({
     actionsPosition = 'end',
     canEdit = true,
     canDelete = true,
-    customActions
+    customActions,
+    headerActions
 }: EditableTableProps) {
     const [tableColumns, setTableColumns] = useState<Column[]>(columns);
     const [editingId, setEditingId] = useState<string | number | null>(null);
@@ -279,7 +282,8 @@ export default function EditableTable({
 
     return (
         <div className="flex flex-col gap-2">
-            <div className="flex justify-end mb-1">
+            <div className="flex justify-end items-center gap-4 mb-1">
+                {headerActions}
                 <button
                     onClick={resetSettings}
                     className="text-[9px] uppercase tracking-widest font-bold text-gray-500 hover:text-gold transition-colors flex items-center gap-1"
@@ -347,6 +351,18 @@ export default function EditableTable({
                                                         onChange={(e) => handleChange(col.key, e.target.checked)}
                                                         className="w-4 h-4 rounded border-white/20 bg-black/40"
                                                     />
+                                                ) : col.type === 'select' ? (
+                                                    <select
+                                                        value={value ?? ''}
+                                                        onChange={(e) => handleChange(col.key, e.target.value)}
+                                                        className="w-full bg-black/60 border border-white/20 rounded px-2 py-1 text-white focus:outline-none focus:border-gold text-xs"
+                                                    >
+                                                        {col.options?.map(opt => (
+                                                            <option key={opt.value} value={opt.value}>
+                                                                {opt.label}
+                                                            </option>
+                                                        ))}
+                                                    </select>
                                                 ) : (
                                                     <input
                                                         type={col.type || 'text'}

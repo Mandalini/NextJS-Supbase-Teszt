@@ -436,8 +436,13 @@ export default function DashboardPage() {
                                     </Link>
                                 )}
                                 {hasPermission('view_uploaded_events') && (
-                                    <Link onClick={() => setIsMenuOpen(false)} href="/dashboard/feltoltott-esemenyek" className="block px-4 py-3 text-sm text-gray-300 hover:text-brand-blue hover:bg-brand-blue/10 transition-colors flex items-center gap-2 font-bold tracking-widest uppercase text-[10px]">
+                                    <Link onClick={() => setIsMenuOpen(false)} href="/dashboard/feltoltott-esemenyek" className="block px-4 py-3 text-sm text-gray-300 hover:text-brand-blue hover:bg-brand-blue/10 transition-colors flex items-center gap-2 font-bold tracking-widest uppercase text-[10px] border-b border-white/5">
                                         <span className="text-sm">📥</span> Feltöltött események
+                                    </Link>
+                                )}
+                                {hasPermission('manage_sync_rules') && (
+                                    <Link onClick={() => setIsMenuOpen(false)} href="/dashboard/sync-locations" className="block px-4 py-3 text-sm text-gray-300 hover:text-gold hover:bg-gold/10 transition-colors flex items-center gap-2 font-bold tracking-widest uppercase text-[10px]">
+                                        <span className="text-sm">🔄</span> Szinkronizálási helyek
                                     </Link>
                                 )}
                             </div>
