@@ -7,6 +7,7 @@ import { supabase } from '@/lib/supabase';
 import { usePermissions } from '@/app/hooks/usePermissions';
 import dynamic from 'next/dynamic';
 import SyncTasksTable from '@/app/components/SyncTasksTable';
+import DefaultSyncLocationsTable from '@/app/components/DefaultSyncLocationsTable';
 import 'react-quill-new/dist/quill.snow.css';
 
 const ReactQuill = dynamic(() => import('react-quill-new'), { ssr: false });
@@ -403,13 +404,29 @@ export default function AdminEditProfilePage() {
             {(userPermissions.some((p: any) => p.action === 'view_sync_rules') || userPermissions.some((p: any) => p.action === 'manage_sync_rules')) && (
                 <div className="glass-panel p-6 rounded-2xl glow-border mb-6">
                     <h3 className="text-xl font-bold uppercase tracking-widest text-brand-blue mb-4">Külső Szinkronizálás Célpontjai</h3>
-                    <p className="text-gray-400 text-xs mb-4">Itt állíthatod be, hogy ezt a szervezőt mely külső rendszerekbe kell szinkronizálni, és nyomon követheted azok állapotát.</p>
-                    <div className="bg-black/40 rounded-xl overflow-hidden border border-white/10 p-2 md:p-4">
-                        <SyncTasksTable 
-                            fixedTargetType="Szervező" 
-                            fixedTargetId={userId} 
-                            readonly={!userPermissions.some((p: any) => p.action === 'manage_sync_rules')}
-                        />
+                    <p className="text-gray-400 text-xs mb-8">Itt állíthatod be, hogy ezt a szervezőt mely külső rendszerekbe kell szinkronizálni, és mely célpontokhoz kerüljenek be az új események automatikusan.</p>
+                    
+                    <div className="mb-8">
+                        <h4 className="text-sm font-bold uppercase tracking-widest text-gold mb-2">1. Alapértelmezett Szinkronizálási Helyek</h4>
+                        <p className="text-gray-500 text-[10px] uppercase tracking-widest mb-4">Minden újonnan létrehozott esemény (vagy szervező) ezekre a helyekre fog automatikusan szinkronizálódni.</p>
+                        <div className="bg-black/40 rounded-xl overflow-hidden border border-white/10 p-2 md:p-4">
+                            <DefaultSyncLocationsTable 
+                                profileId={userId}
+                                readonly={!userPermissions.some((p: any) => p.action === 'manage_sync_rules')}
+                            />
+                        </div>
+                    </div>
+
+                    <div>
+                        <h4 className="text-sm font-bold uppercase tracking-widest text-brand-purple mb-2">2. Aktuális Szinkronizálási Feladatok</h4>
+                        <p className="text-gray-500 text-[10px] uppercase tracking-widest mb-4">A szervezőhöz tartozó egyedi szinkronizációs bejegyzések állapota.</p>
+                        <div className="bg-black/40 rounded-xl overflow-hidden border border-white/10 p-2 md:p-4">
+                            <SyncTasksTable 
+                                fixedTargetType="Szervező" 
+                                fixedTargetId={userId} 
+                                readonly={!userPermissions.some((p: any) => p.action === 'manage_sync_rules')}
+                            />
+                        </div>
                     </div>
                 </div>
             )}

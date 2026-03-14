@@ -1,4 +1,4 @@
-# My Event App - Fejlesztési Dokumentáció v1.1
+# My Event App - Fejlesztési Dokumentáció v1.2
 
 Ez a dokumentum összefoglalja a „My Event App” eseménykezelő rendszer eddigi fejlesztési eredményeit, technikai alapjait és architektúráját. A dokumentum célja, hogy kiindulópontként szolgáljon a jövőbeni fejlesztésekhez és hasonló rendszerek alapkövének tekinthető.
 
@@ -31,6 +31,9 @@ A rendszer alapja egy relációs adatbázis, amely a következő fő táblákbó
 6.  **`user_roles` & `role_permissions`**: Kapcsolótáblák, amik összekötik a felhasználókat a szerepkörökkel és az engedélyekkel.
 7.  **`scrape_sources`**: Külső adatforrások (URL, parser típus, státusz) technikai táblája.
 8.  **`soundbath_events`**: Begyűjtött (scraped) eseményadatok tárolója, amelyek még nem kerültek át a végleges `events` táblába.
+9.  **`sync_locations`**: Külső szinkronizációs célpontok (pl. WordPress API-k).
+10. **`sync_tasks`**: Aktuális szinkronizációs feladatok és állapotuk.
+11. **`profile_default_sync_locations`**: Szervezőnkénti alapértelmezett szinkronizációs célpontok.
 
 ### 2.2 Szerepkörök és Jogosultságok (RBAC)
 
@@ -45,6 +48,7 @@ A rendszer támogatja a granuláris jogosultságokat, melyek a „Szerepkör-má
 Újonnan bevezetett jogok:
 -   `view_uploaded_events`: Hozzáférés a „Feltöltött események” oldalhoz.
 -   `manage_uploaded_events`: Szerkesztési és törlési jog az adatok felett.
+-   `view_sync_rules` & `manage_sync_rules`: Szinkronizációs helyszínek és feladatok kezelése.
 
 **Kulcsfontosságú modul:** `app/hooks/usePermissions.ts` – Egy egyedi hook, amely lekéri a bejelentkezett felhasználó jogait, és biztosítja a `hasPermission()` funkciót a UI elemek (gombok, menük) elrejtéséhez/megjelenítéséhez.
 
@@ -89,6 +93,13 @@ Egy speciális adminisztrációs felület (`/dashboard/feltoltott-esemenyek`) a 
     -   *Jogosultság-érzékenység:* Automatikusan elrejti a módosító funkciókat, ha hiányzik a `manage_uploaded_events` jog.
     -   *Formázás:* Intelligens típuskezelés (Checkboxok, Dátumválasztók, Időformátum `HH:mm`).
 
+### 3.5 Szinkronizációs Rendszer (ÚJ)
+
+A rendszer támogatja az adatok automatikus és manuális továbbítását külső webhelyekre (pl. WordPress).
+-   **Szervezői Alapértelmezések:** Minden szervezőhöz beállíthatók alapértelmezett szinkronizációs célok.
+-   **Automatizmus:** Új esemény létrehozásakor vagy klónozásakor egy adatbázis trigger automatikusan legenerálja a szinkronizációs feladatokat a `sync_tasks` táblába.
+-   **Globális Vezérlő:** A Dashboard menüjéből elérhető önálló felületek az alapértelmezések és az aktuális feladatok kezeléséhez.
+
 ---
 
 ## 4. Biztonság és Adatvédelem
@@ -103,7 +114,13 @@ Az adatbázis szintjén kényszerítjük ki a jogosultságokat. Fontosabb SQL sz
 ### 4.2 Auth Middleware
 
 A Next.js middleware és a Supabase Auth integrációja gondoskodik a nem védett oldalak (pl. Dashboard) elérésének korlátozásáról nem bejelentkezett felhasználók számára.
+### 4.3 Adatbázis Függvények (Stored Procedures)
 
+A rendszer üzleti logikáját az alábbi tárolt eljárások támogatják:
+- `fn_auto_create_sync_tasks()`: Esemény szinkron trigger (magyar nyelvű típusokkal és névvel).
+- `get_pending_organizer_syncs()`: Lekérdezés n8n számára a függő szervezőkhöz.
+- `update_sync_task_status()`: Állapot- és external_id frissítő függvény.
+- `handle_new_user()`: Automatikus profil és szerepkör létrehozó.
 ---
 
 ## 5. Legutóbbi Optimalizációk
@@ -123,10 +140,10 @@ Ez az alaprendszer készen áll a bővítésre a következőkkel:
 1.  **Értesítések:** Automatikus e-mail visszaigazolás jelentkezéskor.
 2.  **QR-kód:** Beléptető kód generálása a jelentkezőknek.
 3.  **Statisztika:** Dashboard grafikonok a rendezvények népszerűségéről.
-4.  **Publikus Oldal:** Egy látványosabb, SEO-barát landing page az események listázásához.
+4.  **Publikus Oldal:** SEO-barát landing page az események listázásához.
 
 ---
 
-**Lezárva:** 2026. március 11.
+**Frissítve:** 2026. március 14.
 **Készítette:** Antigravity AI Coding Assistant
 **Téma:** Eseményvezérelt App-keretrendszer - Jogosultságok és Adatkezelés bővítése

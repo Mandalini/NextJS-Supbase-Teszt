@@ -64,7 +64,32 @@ Minden új adminisztrációs oldalnak (pl. Szinkronizálás vezérlő) követnie
 - **Visszalépés gomb:** A bal felső sarokban `Link` komponenssel, `glass-panel` stílusban.
 - **Címsor:** `text-4xl font-extralight tracking-wider` stílusú H1, arany vagy kék kiemeléssel.
 - **Táblázat:** `EditableTable` használata, ahol a **Műveletek** oszlop az első (`actionsPosition="start"`), az **Állapot** pedig közvetlenül utána következik.
-- **Dátumok:** A módosítás dátuma és ideje (óra:perc) az utolsó oszlopban jelenjen meg.
+- Dátumok: A módosítás dátuma és ideje (óra:perc) az utolsó oszlopban jelenjen meg.
+
+## Szervezői Alapértelmezett Szinkronizálás (`profile_default_sync_locations`)
+
+Az új funkció lehetővé teszi, hogy minden szervezőhöz ("Profil") előre beállítsuk, melyik külső helyszínekre kell az eseményeinek automatikusan szinkronizálódniuk.
+
+- **Működés:** Amikor egy új esemény létrejön (vagy egy meglévőt klónoznak), egy adatbázis trigger automatikusan létrehozza a megfelelő feladatokat a `sync_tasks` táblában a szervező alapbeállításai alapján.
+- **Kezelőfelület:**
+    - **Globális:** A Dashboard hamburger menüjéből ("Szinkron alapértelmezések") érhető el az összes szervező központi listája.
+    - **Profil-specifikus:** A Profil szerkesztése oldalon ("Külső Szinkronizálás Célpontjai" blokk) csak az adott szervező alapértelmezései kezelhetők.
+
+## Adatbázis Függvények (Stored Procedures)
+
+A szinkronizációs logikát és a rendszerműködést az alábbi PostgreSQL függvények támogatják:
+
+| Függvény neve | Leírás |
+| :--- | :--- |
+| `fn_auto_create_sync_tasks()` | **Esemény szinkron trigger:** Automatikusan lefut minden új esemény beszúrásakor. Lekéri a szervező (`user_id`) alapértelmezett helyszíneit, és bejegyzi őket a `sync_tasks` táblába "Esemény" típussal és az esemény címével. |
+| `get_pending_organizer_syncs()` | **n8n segédfüggvény:** Listázza az összes olyan szervezőt, akinek az adatai "új" vagy "módosítandó" állapotban vannak, kiegészítve a szinkronizációs hely URL-jével és kulcsával. |
+| `update_sync_task_status()` | **Állapotkezelő:** Lehetővé teszi a szinkronizációs feladatok állapotának frissítését, az `external_id` (külső azonosító) visszaírását és hibaüzenetek rögzítését. |
+| `handle_new_user()` | **Profil inicializáló:** Automatikusan létrehozza a nyilvános `profiles` rekordot és hozzárendeli az alapértelmezett "Tag" szerepkört minden új regisztrációkor. |
+| `log_event_publish()` | **Publikálás figyelő:** Naplózza a `publish_event_hooks` táblába, ha egy esemény státusza 'published' vagy 'cancelled' értékre változik. |
+| `deactivate_missing_events()` | **Scraper takarító:** Hatástalanítja (`is_active = false`) azokat a begépelt eseményeket, amik egy megadott idő óta nem jelentek meg a forrásoldalon. |
+| `get_next_run_id()` | **Művelet azonosító:** Generál egy új egyedi futtatási azonosítót a külső adatok begyűjtéséhez (scraping). |
+| `handle_updated_at_sync_locations()` | Automatikusan frissíti az `updated_at` időbélyeget a szinkronizációs helyszíneknél. |
+| `set_updated_at_sync_tasks()` | Automatikusan frissíti az `updated_at` időbélyeget a szinkronizációs feladatoknál. |
 
 ## n8n Integráció (Tervezett)
 
