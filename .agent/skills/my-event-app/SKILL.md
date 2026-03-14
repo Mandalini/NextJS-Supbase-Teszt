@@ -125,3 +125,46 @@ Az `app/components/EditableTable.tsx` egy univerzális eszköz a CRUD műveletek
 4.  **Komponens-újrafelhasználás:** Használd a meglévő form vezérlőket és **navigációs gomb stílusokat**.
 5.  **Clean Code:** Használj TypeScript interfészeket a Supabase válaszokhoz (pl. `UserRole`, `UserPermission`).
 6.  **Frissítés:** Auth műveletek (belépés/kilépés) után mindig hívj `router.refresh()`-t a szerver oldali állapot szinkronizálásához.
+
+## 4. n8n & Supabase Szinkronizáció Standardok
+
+A külső rendszerekkel való szinkronizáció során (n8n workflow-k) az alábbi szakmai szabályokat KELL követni:
+
+### 4.1 Supabase RPC hívások n8n-ből
+- **Végpont (URL):** Mindig tartalmazza az `/rpc/` útvonalat: `https://[projekt-azonosító].supabase.co/rest/v1/rpc/[függvény_neve]`.
+- **Metódus:** Minden RPC hívást **POST**-tal kell indítani (még paraméter nélküli lekérdezés esetén is).
+- **Hitelesítés:** Az `apikey` és `Authorization` fejlécek megadása kötelező. A fejléc JSON-nál kerüld az `=` prefixet, ha statikus adatot adsz meg, hogy elkerüld a "Invalid JSON" hibát.
+
+### 4.2 Iteráció és Adatkezelés (Split In Batches v3)
+- **Kimeneti logika:** A v3-as csomópontnál az **alsó kimenet (Index 1)** a tényleges ciklus ága (Loop). A felső kimenet (Index 0) a "Done" ág.
+- **Paraméter hivatkozás:** Cikluson belül a központi azonosítókat (pl. `task_id`) mindig közvetlenül a Loop node-tól kérjük el: `$node["Loop Over Items"].json.task_id`.
+- **Visszaírás:** A szinkronizáció végén az `update_sync_task_status` hívásakor a dinamikus paraméterezéshez használd a `JSON.stringify` kifejezést.
+
+### 4.3 n8n Code Node (v2+) formátum
+- A Code node-oknak szigorúan tömböt kell visszaadniuk, ahol minden elem egy `json` objektumot tartalmaz:
+  ```javascript
+  return [{ json: { id: "...", status: "success" } }];
+  ```
+ 
+### 4.4 Statikus vs Dinamikus Paraméterek
+- Csak hibrid (kifejezés + szöveg) mezőknél használj `=` prefixet. Tisztán statikus JSON beállításoknál (pl. fejlécek) az n8n "Fixed" módját preferáld.
+
+### 4.5 🚨 KRITIKUS: n8n Node Frissítési Szabály (Belső Utasítás)
+
+**Hiba leírása:** Az n8n MCP `update_partial_workflow` eszköze `updateNode` típusú műveletnél a `parameters` objektumot **teljes körűen lecseréli**, nem részlegesen módosítja.
+
+**Kötelező protokoll minden node-módosításnál:**
+1.  **Állapotlekérés:** Bármilyen módosítás előtt KÖTELEZŐ lekérni a workflow teljes struktúráját az `n8n_get_workflow(mode='full')` hívással.
+2.  **Teljes Adatcsomag (Full Payload):** Ha egy node paramétereit (pl. csak a fejlécet) módosítod, a beküldött `parameters` objektumnak tartalmaznia kell az ÖSSZES többi meglévő mezőt is (URL, Method, sendBody, jsonBody, options, stb.). Soha ne küldj részleges paraméterlistát, mert adatvesztést okoz!
+3.  **Native encoding:** n8n kifejezésekben (Expressions) Base64 kódoláshoz SOHA ne használd a Node.js `Buffer` objektumát, mert a sandbox tiltja. Kizárólag az n8n natív `$base64.encode()` függvényét használd.
+4.  **Ellenőrzés:** Módosítás után mindig ellenőrizd a `nodeCount` értékét a válaszban, hogy biztosan nem töröltél-e véletlenül csomópontot vagy kapcsolatot.
+
+### 4.6 🚨 KRITIKUS: Dokumentáció Frissítési Szabály (Belső Utasítás)
+
+**Hiba leírása:** Dokumentációk vagy Skill fájlok módosításakor az új információk hozzáadása során korábbi fontos technikai tanulságok vagy leírások véletlenül törlésre kerültek a nem megfelelő szerkesztési tartomány meghatározása miatt.
+
+**Kötelező protokoll minden fájlmódosításnál:**
+1.  **Környezet-ellenőrzés:** Bármilyen módosítás előtt KÖTELEZŐ elolvasni a módosítandó szakasz előtti és utáni részt. Győződj meg róla, hogy a TargetContent pontosan csak azt érinti, amit módosítani kell.
+2.  **Megőrző beszúrás:** Ha új információt adsz hozzá egy listához vagy fejezethez, SOHA ne írd felül az utolsó elemet az újjal. Ehelyett használd az utolsó elemet hivatkozási pontként, és a ReplacementContent-ben szerepeltesd az eredeti elemet ÉS az új elemet is alatta.
+3.  **Visszaellenőrzés:** A módosítás utáni válaszban (Diff) mindig ellenőrizd, hogy nem tűntek-e el olyan sorok ("-" jellel), amiknek meg kellett volna maradniuk. Ha adatvesztést észlelsz, azonnal javítsd!
+4.  **Sorszámok és hivatkozások:** Különösen figyelj a sorszámozott listákra (pl. 4.1, 4.2). Az új pontokat logikusan fűzd hozzá, ne cseréld le velük a meglévőket.

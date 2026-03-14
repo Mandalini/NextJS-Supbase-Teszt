@@ -119,6 +119,7 @@ A Next.js middleware és a Supabase Auth integrációja gondoskodik a nem védet
 A rendszer üzleti logikáját az alábbi tárolt eljárások támogatják:
 - `fn_auto_create_sync_tasks()`: Esemény szinkron trigger (magyar nyelvű típusokkal és névvel).
 - `get_pending_organizer_syncs()`: Lekérdezés n8n számára a függő szervezőkhöz.
+- `get_pending_event_syncs()`: Lekérdezés az n8n számára a függőben lévő esemény szinkronokhoz.
 - `update_sync_task_status()`: Állapot- és external_id frissítő függvény.
 - `handle_new_user()`: Automatikus profil és szerepkör létrehozó.
 ---

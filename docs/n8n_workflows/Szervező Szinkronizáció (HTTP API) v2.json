@@ -1,0 +1,179 @@
+{
+  "name": "Szervező Szinkronizáció (HTTP API) v2",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutesSingle"
+            }
+          ]
+        }
+      },
+      "id": "15585d89-5941-41cc-a1a5-e69c514edb6e",
+      "name": "TriggerNode",
+      "position": [
+        -592,
+        -192
+      ],
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.1
+    },
+    {
+      "parameters": {
+        "url": "https://krehiptongtcrofkdhxh.supabase.co/rest/v1/rpc/get_pending_organizer_syncs",
+        "sendHeaders": true,
+        "specifyHeaders": "json",
+        "jsonHeaders": "{\n  \"apikey\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtyZWhpcHRvbmd0Y3JvZmtkaHhoIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MTk2MTcyMiwiZXhwIjoyMDg3NTM3NzIyfQ.gpvOd-Oy4LDYJbZw2D-SLKTkor6sExfSD9gguFzoKWk\",\n  \"Authorization\": \"Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtyZWhpcHRvbmd0Y3JvZmtkaHhoIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MTk2MTcyMiwiZXhwIjoyMDg3NTM3NzIyfQ.gpvOd-Oy4LDYJbZw2D-SLKTkor6sExfSD9gguFzoKWk\"\n}",
+        "options": {}
+      },
+      "id": "354c15b4-fd0b-413f-a995-e22cc0f414c9",
+      "name": "GetPendingNode",
+      "position": [
+        -400,
+        -192
+      ],
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        -192,
+        -192
+      ],
+      "id": "c8032272-5d83-4b4e-9537-98ba9fdeb698",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "name": "Replace Me",
+      "typeVersion": 1,
+      "position": [
+        336,
+        -176
+      ],
+      "id": "2fff0fed-d5a4-4aa6-8358-088793a0a10b"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Szimulált válasz generálása\nreturn [{\n  json: {\n    id: \"SIM-\" + Math.random().toString(36).substring(2, 9).toUpperCase(),\n    status: \"success\",\n    message: \"Szervező sikeresen szinkronizálva (Szimulált)\"\n  }\n}];"
+      },
+      "id": "653c08ce-0c5f-4bdd-8b95-34e6575a0e50",
+      "name": "Szimuláció (Külső ID generátor)",
+      "position": [
+        96,
+        -176
+      ],
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://krehiptongtcrofkdhxh.supabase.co/rest/v1/rpc/update_sync_task_status",
+        "sendHeaders": true,
+        "specifyHeaders": "json",
+        "jsonHeaders": "{\n  \"apikey\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtyZWhpcHRvbmd0Y3JvZmtkaHhoIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MTk2MTcyMiwiZXhwIjoyMDg3NTM3NzIyfQ.gpvOd-Oy4LDYJbZw2D-SLKTkor6sExfSD9gguFzoKWk\",\n  \"Authorization\": \"Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtyZWhpcHRvbmd0Y3JvZmtkaHhoIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MTk2MTcyMiwiZXhwIjoyMDg3NTM3NzIyfQ.gpvOd-Oy4LDYJbZw2D-SLKTkor6sExfSD9gguFzoKWk\"\n}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{\n  JSON.stringify({\n    \"p_task_id\": $node[\"Loop Over Items\"].json.task_id,\n    \"p_status\": \"szinkronizált\",\n    \"p_external_id\": $json.id || $json.uuid || \"\"\n  })\n}}",
+        "options": {}
+      },
+      "id": "9cf7059e-0a07-42c3-ae30-8faf87b4b8ff",
+      "name": "GetPendingNode1",
+      "position": [
+        576,
+        -176
+      ],
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "TriggerNode": {
+      "main": [
+        [
+          {
+            "node": "GetPendingNode",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GetPendingNode": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Szimuláció (Külső ID generátor)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Replace Me": {
+      "main": [
+        [
+          {
+            "node": "GetPendingNode1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Szimuláció (Külső ID generátor)": {
+      "main": [
+        [
+          {
+            "node": "Replace Me",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GetPendingNode1": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "bf251b53-ae40-40b2-aadc-af4579a4bd87",
+  "meta": {
+    "instanceId": "342cc30b51cdbf113cefc933cb8312e695da48b2417202d0c37380815543a623"
+  },
+  "id": "i6i6DyWwvpjYjm6L",
+  "tags": []
+}

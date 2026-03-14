@@ -89,6 +89,7 @@ export default function SyncLocationsPage() {
             name: 'Új helyszín',
             url: 'https://',
             status: 'active',
+            wp_user: '',
             description: '',
             target_type: 'all',
             secret_key: ''
@@ -144,7 +145,13 @@ export default function SyncLocationsPage() {
         { 
             key: 'description', 
             label: 'Leírás', 
-            width: 300, 
+            width: 250, 
+            editable: true 
+        },
+        { 
+            key: 'wp_user', 
+            label: 'WP Felhasználó', 
+            width: 150, 
             editable: true 
         },
         { 

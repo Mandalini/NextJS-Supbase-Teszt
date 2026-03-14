@@ -16,7 +16,8 @@ A rendszer egy központi vezérlő táblát (`sync_locations`) használ, amely m
 | `status` | TEXT | Állapot: `active` (Aktív) vagy `inactive` (Inaktív) |
 | `target_type` | TEXT | Szűrés: `Szervező`, `Esemény` vagy `all` |
 | `description` | TEXT | Megjegyzés vagy belső leírás |
-| `secret_key` | TEXT | Hitelesítéshez szükséges API kulcs vagy token |
+| `wp_user` | TEXT | WordPress felhasználónév a hitelesítéshez |
+| `secret_key` | TEXT | WordPress alkalmazás jelszó (n8n kódolja majd) |
 
 ## Jogosultságok
 
@@ -82,7 +83,8 @@ A szinkronizációs logikát és a rendszerműködést az alábbi PostgreSQL fü
 | Függvény neve | Leírás |
 | :--- | :--- |
 | `fn_auto_create_sync_tasks()` | **Esemény szinkron trigger:** Automatikusan lefut minden új esemény beszúrásakor. Lekéri a szervező (`user_id`) alapértelmezett helyszíneit, és bejegyzi őket a `sync_tasks` táblába "Esemény" típussal és az esemény címével. |
-| `get_pending_organizer_syncs()` | **n8n segédfüggvény:** Listázza az összes olyan szervezőt, akinek az adatai "új" vagy "módosítandó" állapotban vannak, kiegészítve a szinkronizációs hely URL-jével és kulcsával. |
+| `get_pending_organizer_syncs()` | **n8n segédfüggvény (Szervező):** Listázza a várakozó szervezőket, WP mezőnevekkel, `wp_user`-rel és minden szükséges ACF adattal. |
+| `get_pending_event_syncs()` | **n8n segédfüggvény (Esemény):** Listázza a várakozó eseményeket, WP mezőnevekkel, `wp_user`-rel és minden szükséges ACF adattal. |
 | `update_sync_task_status()` | **Állapotkezelő:** Lehetővé teszi a szinkronizációs feladatok állapotának frissítését, az `external_id` (külső azonosító) visszaírását és hibaüzenetek rögzítését. |
 | `handle_new_user()` | **Profil inicializáló:** Automatikusan létrehozza a nyilvános `profiles` rekordot és hozzárendeli az alapértelmezett "Tag" szerepkört minden új regisztrációkor. |
 | `log_event_publish()` | **Publikálás figyelő:** Naplózza a `publish_event_hooks` táblába, ha egy esemény státusza 'published' vagy 'cancelled' értékre változik. |
@@ -91,13 +93,82 @@ A szinkronizációs logikát és a rendszerműködést az alábbi PostgreSQL fü
 | `handle_updated_at_sync_locations()` | Automatikusan frissíti az `updated_at` időbélyeget a szinkronizációs helyszíneknél. |
 | `set_updated_at_sync_tasks()` | Automatikusan frissíti az `updated_at` időbélyeget a szinkronizációs feladatoknál. |
 
-## n8n Integráció (Tervezett)
+## n8n Integráció (Aktuális - v2 Pattern)
 
-Az n8n számára az alábbi lekérdezés javasolt a feladatok kezeléséhez:
-```sql
-SELECT t.*, l.url, l.secret_key 
-FROM sync_tasks t
-JOIN sync_locations l ON t.sync_location_id = l.id
-WHERE t.status IN ('új', 'módosítandó');
+Az n8n oldalon a **"Szervező Szinkronizáció (HTTP API) v2"** nevű munkafolyamat az alapminta az integrációhoz.
+
+### Kritikus Tanulságok és Megoldások:
+
+1.  **Supabase RPC hívás:**
+    - Az URL-nek tartalmaznia kell az `/rpc/` útvonalat: `https://.../rest/v1/rpc/function_name`.
+    - A metódusnak mindig **POST**-nak kell lennie.
+    - Fejlécekben az `apikey` és az `Authorization` (Bearer token) kötelező.
+
+2.  **Iteráció (Split In Batches v3):**
+    - **Fontos:** A v3-as csomópontnál az **alsó kimenet (Index 1)** a "Loop" ág, ide kell kötni az adatfeldolgozást! A felső kimenet (Index 0) a "Done" ág.
+
+3.  **Adatok elérése a cikluson belül:**
+    - Mivel a feldolgozás során az objektumstruktúra változhat, a feladat azonosítóját (`task_id`) mindig közvetlenül a Loop node-tól kérjük el:
+      `$node["Loop Over Items"].json.task_id`.
+    - A külső rendszer válaszát (szimulált vagy valós ID) a legutolsó node-tól vesszük: `$json.id`.
+
+4.  **Hibaüzenetek elkerülése:**
+    - A fejléc JSON-nál kerülni kell a felesleges kifejezés-prefixeket (`=`), ha a JSON statikus.
+    - A Code node-oknak mindig tömböt kell visszaadniuk: `return [{ json: { ... } }];`.
+
+5.  **Hitelesítési Minta (Automata Basic Auth):**
+    - Mivel az n8n sandbox letiltja a `Buffer`-t a Headers mezőben, egy külön **Code Node**-ot használunk az adatok beküldése előtt:
+    ```javascript
+    for (const item of $input.all()) {
+      item.json.auth_header = 'Basic ' + Buffer.from(item.json.wp_user + ':' + item.json.api_key).toString('base64');
+    }
+    return $input.all();
+    ```
+    - A HTTP Request node-ban a fejléc hivatkozása: `{{ $json.auth_header }}`.
+
+### Mezőleképezések (Field Mapping) a WordPress felé:
+
+Az n8n munkafolyamat az alábbi struktúrában küldi az adatokat a WordPress REST API felé.
+
+#### 1. Szervezők (Szervezok CPT)
+| WordPress / ACF Mező | Supabase / n8n Mező | Típus | Leírás |
+| :--- | :--- | :--- | :--- |
+| `title` | `wp_title` | Text | Szervező neve |
+| `content` | `wp_content` | HTML/Text | Bemutatkozás |
+| `acf.display_name` | `acf_display_name` | Text | Megjelenítendő név |
+| `acf.szlogen` | `acf_szlogen` | Text | Szervező szlogenje |
+| `acf.phone` | `acf_phone` | Text | Telefonszám |
+| `acf.email` | `acf_email` | Text | Kapcsolati email |
+| `acf.website` | `acf_website` | URL | Weboldal |
+| `acf.facebook` | `acf_facebook` | URL | Facebook link |
+| `acf.instagram` | `acf_instagram` | URL | Instagram link |
+| `acf.kep_link` | `acf_kep_link` | URL | Profilkép URL |
+| `acf.organizer_id` | `acf_organizer_id` | UUID | Eredeti Profil ID |
+| `acf.task_id` | `acf_task_id` | UUID | Feladat ID |
+
+#### 2. Események (Esemenyek CPT)
+| WordPress / ACF Mező | Supabase / n8n Mező | Típus | Leírás |
+| :--- | :--- | :--- | :--- |
+| `title` | `wp_title` | Text | Esemény neve |
+| `content` | `wp_content` | HTML/Text | Leírás |
+| `acf.event_date` | `acf_event_date` | Date | Dátum (YYYY-MM-DD) |
+| `acf.event_time` | `acf_event_time` | Time | Időpont (HH:mm) |
+| `acf.location` | `acf_location` | Text | Helyszín |
+| `acf.price` | `acf_price` | Numeric | Részvételi díj |
+| `acf.capacity` | `acf_capacity` | Integer | Max. létszám |
+| `acf.category` | `acf_category` | Text | Kategória |
+| `acf.image_url` | `acf_image_url` | URL | Kiemelt kép linkje |
+| `acf.event_id` | `acf_event_id` | UUID | Eredeti Esemény ID |
+| `acf.organizer_id` | `acf_organizer_id` | UUID | Szervező ID |
+| `acf.task_id` | `acf_task_id` | UUID | Feladat ID |
+
+### Példa a státusz frissítés (UpdateStatusNode) JSON body-jára:
+```javascript
+={{
+  JSON.stringify({
+    "p_task_id": $node["Loop Over Items"].json.task_id,
+    "p_status": "szinkronizált",
+    "p_external_id": $json.id || $json.uuid || ""
+  })
+}}
 ```
-A feldolgozás után az n8n frissíti a `status` mezőt `szinkronizált`-ra és beírja az `external_id` értékét.
