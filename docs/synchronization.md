@@ -52,7 +52,11 @@ Ez a tábla köti össze a szervezőket/eseményeket a konkrét szinkronizáció
 ## Kezelőfelület
 
 ### Szinkronizálás vezérlő (Összesített nézet)
-A Dashboard hamburger menüjéből érhető el a teljes lista, ahol minden szinkronizációs feladat kezelhető.
+A Dashboard hamburger menüjéből érhető el a teljes lista. Az áttekinthetőség érdekében az adatok két külön csoportra (táblázatra) vannak bontva:
+- **SZERVEZŐK SZINKRONIZÁLÁSA**: Csak a profilokhoz tartozó feladatok.
+- **ESEMÉNYEK SZINKRONIZÁLÁSA**: Csak az eseményekhez tartozó feladatok. Ebben a nézetben egy extra **"Szervező neve"** oszlop is segít azonosítani az esemény tulajdonosát.
+
+Minden táblázat saját "+ Új szinkron feladat" gombbal rendelkezik, amely automatikusan beállítja a cél-típust.
 
 ### Beágyazott kezelő
 A szervezők (Profil szerkesztése) és események (Esemény szerkesztése) adatlapjának alján található egy kontextus-érzékeny táblázat. 
