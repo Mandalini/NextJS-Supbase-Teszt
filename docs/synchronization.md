@@ -97,6 +97,11 @@ A szinkronizációs logikát és a rendszerműködést az alábbi PostgreSQL fü
 | `handle_updated_at_sync_locations()` | Automatikusan frissíti az `updated_at` időbélyeget a szinkronizációs helyszíneknél. |
 | `set_updated_at_sync_tasks()` | Automatikusan frissíti az `updated_at` időbélyeget a szinkronizációs feladatoknál. |
 
+### Automatikus állapotfrissítés
+A rendszer adatbázis-szintű triggerekkel garantálja az adatkonzisztenciát. Ha egy már `szinkronizált` állapotú rekord forrásadata megváltozik (pl. módosítják az esemény leírását vagy a szervező telefonszámát), a hozzá tartozó minden szinkronizációs feladat állapota automatikusan `módosítandó`-ra vált.
+
+### Prioritás
+
 ## n8n Integráció (Aktuális - v2 Pattern)
 
 Az n8n oldalon a **"Szervező Szinkronizáció (HTTP API) v2"** nevű munkafolyamat az alapminta az integrációhoz.
